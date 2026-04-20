@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "979921148562",
+    "project_id": "geniaes-57aca",
+    "storage_bucket": "geniaes-57aca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979921148562:android:8c31ef34ce9e6f38f1644b",
+        "android_client_info": {
+          "package_name": "com.geniaes.student"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEUbVsbeAln7yAMWIldexADKWgWGIEO5o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979921148562:android:3b6637a0c87df4c7f1644b",
+        "android_client_info": {
+          "package_name": "com.geniaes.teachers"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEUbVsbeAln7yAMWIldexADKWgWGIEO5o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
