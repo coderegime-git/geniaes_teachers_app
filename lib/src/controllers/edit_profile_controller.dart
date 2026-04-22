@@ -3,12 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import '../models/get_teacher_profile_certificate_model.dart';
 import '../models/get_teacher_profile_certificate_model.dart';
 import '../models/get_teacher_profile_education_model.dart';
 import '../models/get_teacher_profile_experience_model.dart';
 import '../models/get_teacher_profile_podcast_model.dart';
+import '../models/categories_tags_model.dart';
+import '../api_services/get_service.dart';
+import '../api_services/urls.dart';
 import 'general_controller.dart';
 
 class EditProfileController extends GetxController {
@@ -75,6 +76,128 @@ class EditProfileController extends GetxController {
   TextEditingController podcastCategoryController = TextEditingController();
   TextEditingController podcastTagController = TextEditingController();
   TextEditingController podcastFileURLController = TextEditingController();
+
+  // Event Date Controller
+  TextEditingController eventDateController = TextEditingController();
+
+  TextEditingController servicePriceController = TextEditingController();
+  TextEditingController broadcastFileTypeController = TextEditingController();
+  TextEditingController broadcastFileLinkController = TextEditingController();
+  TextEditingController eventEndDateController = TextEditingController();
+  int? selectedBlogCategoryId, selectedEventCategoryId;
+  int? selectedServiceCategoryId, selectedPodcastCategoryId;
+  List<int> selectedBlogTagIds = [], selectedEventTagIds = [];
+  List<int> selectedServiceTagIds = [], selectedPodcastTagIds = [];
+
+  // Category and Tag Lists
+  List<CategoryModel> broadcastCategories = [];
+  List<CategoryModel> eventCategories = [];
+  List<CategoryModel> blogCategories = [];
+  List<CategoryModel> serviceCategories = [];
+  List<TagModel> allTags = [];
+  
+  List<int> selectedMediaTagIds = []; // For Teacher Posts (Media)
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchAllCategoriesAndTags();
+  }
+
+  Future<void> fetchAllCategoriesAndTags() async {
+    await Future.wait([
+      fetchBroadcastCategories(),
+      fetchEventCategories(),
+      fetchBlogCategories(),
+      fetchServiceCategories(),
+      fetchTags(),
+    ]);
+  }
+
+  Future<void> fetchBroadcastCategories() async {
+    await getMethod(
+        Get.context!,
+        getBroadcastCategoriesURL,
+        null,
+        false,
+            (context, success, data) {
+          if (success && data != null && data['success'] == true) {
+            broadcastCategories = (data['data'] as List)
+                .map((e) => CategoryModel.fromJson(e))
+                .toList();
+            update();
+          }
+        }
+    );
+  }
+
+  Future<void> fetchEventCategories() async {
+    await getMethod(
+        Get.context!,
+        getEventCategoriesURL,
+        null,
+        false,
+            (context, success, data) {
+          if (success && data != null && data['success'] == true) {
+            eventCategories = (data['data'] as List)
+                .map((e) => CategoryModel.fromJson(e))
+                .toList();
+            update();
+          }
+        }
+    );
+  }
+
+  Future<void> fetchBlogCategories() async {
+    await getMethod(
+        Get.context!,
+        blogCategoriesUrl,
+        null,
+        false,
+            (context, success, data) {
+          if (success && data != null && data['success'] == true) {
+            blogCategories = (data['data'] as List)
+                .map((e) => CategoryModel.fromJson(e))
+                .toList();
+            update();
+          }
+        }
+    );
+  }
+
+  Future<void> fetchServiceCategories() async {
+    await getMethod(
+        Get.context!,
+        getServiceCategoriesURL,
+        null,
+        false,
+            (context, success, data) {
+          if (success && data != null && data['success'] == true) {
+            serviceCategories = (data['data'] as List)
+                .map((e) => CategoryModel.fromJson(e))
+                .toList();
+            update();
+          }
+        }
+    );
+  }
+
+  Future<void> fetchTags() async {
+    await getMethod(
+        Get.context!,
+        tagsUrl,
+        null,
+        false,
+            (context, success, data) {
+          if (success && data != null && data['success'] == true) {
+            allTags = (data['data'] as List)
+                .map((e) => TagModel.fromJson(e))
+                .toList();
+            update();
+          }
+        }
+    );
+  }
 
   String? userProfileSelectedGender;
   DateTime? userProfileSelectedDate;

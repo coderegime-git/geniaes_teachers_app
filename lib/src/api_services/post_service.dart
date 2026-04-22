@@ -48,14 +48,12 @@ postMethod(
       Get.find<ApiController>().changeInternetCheckerState(true);
       try {
         response = await dio.post(apiUrl, data: postData);
-
         if (response.statusCode == 200) {
-          // log('response  ....  ${response.data}');
+          log('response  ....  ${response.data}');
           executionMethod(context, true, response.data);
-
           return;
         }
-        // log('response   ....  $response');
+        log('response   ....  $response');
         // executionMethod(context, false, {'status': null});
       } on dio_instance.DioError catch (e) {
         log('Dio Error  ....  ${e.response}');

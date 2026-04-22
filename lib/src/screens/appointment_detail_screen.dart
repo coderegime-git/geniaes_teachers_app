@@ -28,18 +28,35 @@ class AppointmentDetailScreen extends StatefulWidget {
 class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   @override
   void initState() {
-    Get.find<GeneralController>()
-                .selectedAppointmentHistoryForView
-                .appointmentStatusCode ==
-            2
-        ? getMethod(
-            context,
-            "$getAgoraTokenUrl?channel=${Get.find<GeneralController>().channelForCall}",
-            null,
-            true,
-            getAgoraTokenRepo)
-        : null;
     super.initState();
+
+    final gc   = Get.find<GeneralController>();
+    final appt = gc.selectedAppointmentHistoryForView;
+
+    // ── 1. Build a deterministic channel name from appointment ID.
+    //        Formula: "appt_{id}" — must match student app exactly.
+    final channel = "appt_${appt.id}";
+    gc.updateChannelForCall(channel);
+
+    // ── 2. Store appointment object so makeAgoraCallRepo can send the
+    //        FCM notification payload to the student with the right data.
+    gc.appointmentObject = {
+      "id"                    : appt.id,
+      "student_id"            : appt.studentId,
+      "appointment_type_name" : appt.appointmentTypeName ?? "",
+      "appointment_type_id"   : appt.appointmentTypeId,
+    };
+
+    // ── 3. Fetch Agora token only when appointment is accepted (status 2).
+    if (appt.appointmentStatusCode == 2) {
+      getMethod(
+        context,
+        "$getAgoraTokenUrl?channel=$channel",
+        null,
+        true,
+        getAgoraTokenRepo,
+      );
+    }
   }
 
   @override

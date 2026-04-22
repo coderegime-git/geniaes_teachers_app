@@ -39,6 +39,8 @@ String addEditUserProfileExperienceURL =
 String addEditUserProfilePodcastURL = '${apiBaseUrl}teachers/teacher_podcasts';
 String addEditUserProfileEventURL = '${apiBaseUrl}teachers/teacher_events';
 String addEditUserProfileBlogURL = '${apiBaseUrl}teachers/teacher_posts';
+String addEditUserProfileBroadcastURL = '${apiBaseUrl}teachers/teacher_broadcasts';
+String addEditUserProfileServiceURL = '${apiBaseUrl}teachers/teacher_services';
 
 //---get-profile-certificate
 String getUserProfileCertificateURL =
@@ -89,6 +91,9 @@ String getTeacherCategoriesURL = '${apiBaseUrl}teacher_categories';
 // Broadcast Categories
 String getBroadcastCategoriesURL = '${apiBaseUrl}broadcast_categories';
 
+//service_categories
+String getServiceCategoriesURL = '${apiBaseUrl}service_categories';
+
 // Event Categories
 String getEventCategoriesURL = '${apiBaseUrl}event_categories';
 
@@ -117,9 +122,13 @@ String mentorUnArchivedAppointmentUrl =
 ///---appointment-log-user
 String getAppointmentsDetailURL = '${apiBaseUrl}appointmentDetails';
 
+//tags
+String tagsUrl = '${apiBaseUrl}tags';
+
 /// Blogs
 String categoriesBlogUrl = '${apiBaseUrl}categoriesBlogs';
-String blogCategoriesUrl = '${apiBaseUrl}blogCategories';
+String blogCategoriesUrl = '${apiBaseUrl}blog_categories';
+
 String createConsultantBlogUrl = '${apiBaseUrl}create_consultant_blog';
 String consultantBlogUrl = '${apiBaseUrl}consultant_blogs';
 String blogDetailUrl = '${apiBaseUrl}blogDetail';
