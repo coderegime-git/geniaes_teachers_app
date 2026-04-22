@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import 'package:resize/resize.dart';
@@ -13,13 +12,17 @@ import '../api_services/get_service.dart';
 import '../api_services/post_service.dart';
 import '../api_services/urls.dart';
 import '../config/app_colors.dart';
-import '../config/app_configs.dart';
 import '../config/app_font.dart';
 import '../config/app_text_styles.dart';
+import '../controllers/all_settings_controller.dart';
 import '../controllers/general_controller.dart';
 import '../controllers/live_chat_controller.dart';
 import '../repositories/live_chat_messages_repo.dart';
 import '../widgets/appbar_widget.dart';
+
+/// LiveChatScreen — uses Pusher credentials from GetAllSettingsController
+/// Channel: "private-chat-message.{appointmentId}"
+/// Both teacher and student apps subscribe to the same channel name.
 
 class LiveChatScreen extends StatefulWidget {
   const LiveChatScreen({super.key});
@@ -29,347 +32,367 @@ class LiveChatScreen extends StatefulWidget {
 }
 
 class _LiveChatScreenState extends State<LiveChatScreen> {
-  final logic = Get.put(LiveChatController());
+  final _liveChatLogic     = Get.put(LiveChatController());
+  final _generalController = Get.find<GeneralController>();
+
+  // Read Pusher credentials from settings API (fetched at app start)
+  late final GetAllSettingsController _settingsCtrl;
+
   PusherChannelsFlutter pusherChannels = PusherChannelsFlutter.getInstance();
-  final _apiKey = AppConfigs.pusherAppKey;
 
-  final _channelName =
-      "private-chat-message.${Get.find<GeneralController>().selectedAppointmentHistoryForView.id}";
-  final _eventName = "chat-message";
+  late final String _channelName;
+  static const String _eventName = "chat-message";
 
-  String responseData = '';
-
-  Map<String, dynamic> eventResponseMap = {};
-
-  dynamic messageData = {};
+  // Getters for dynamic credentials
+  String get _pusherAppKey =>
+      _settingsCtrl.getAllSettingsModel.data?.pusherAppKey ?? "";
+  String get _pusherAppSecret =>
+      _settingsCtrl.getAllSettingsModel.data?.pusherAppSecret ?? "";
+  String get _pusherAppCluster =>
+      _settingsCtrl.getAllSettingsModel.data?.pusherAppCluster ?? "mt1";
 
   @override
   void initState() {
     super.initState();
+    _settingsCtrl = Get.find<GetAllSettingsController>();
 
+    final appointmentId =
+        _generalController.selectedAppointmentHistoryForView.id;
+
+    // Channel name — must match student app exactly
+    _channelName = "private-chat-message.$appointmentId";
+
+    // Fetch message history
     getMethod(
-        context,
-        "$getMessagesUrl${Get.find<GeneralController>().selectedAppointmentHistoryForView.id}",
-        null,
-        true,
-        getLiveChatMessagesRepo);
+      context,
+      "$getMessagesUrl$appointmentId",
+      null,
+      true,
+      getLiveChatMessagesRepo,
+    );
 
-    // Initialize Pusher Channel
-    try {
-      pusherChannels.init(
-        apiKey: _apiKey,
-        cluster: AppConfigs.pusherAppCluster,
-        logToConsole: true,
-        onConnectionStateChange: onConnectionStateChange,
-        onError: onError,
-        onSubscriptionSucceeded: onSubscriptionSucceeded,
-        onEvent: onEvent(
-            PusherEvent(channelName: _channelName, eventName: _eventName)),
-        onSubscriptionError: onSubscriptionError,
-        onDecryptionFailure: onDecryptionFailure,
-        onMemberAdded: onMemberAdded,
-        onMemberRemoved: onMemberRemoved,
-        onAuthorizer: onAuthorizer,
-      );
-
-      final myChannel = pusherChannels.subscribe(
-          channelName: _channelName,
-          onEvent: (event) {
-            log("Got channel event: $event");
-            PusherEvent eventTest = event;
-
-            setState(() {
-              responseData = eventTest.data.toString();
-            });
-
-            eventResponseMap = jsonDecode(responseData);
-
-            Get.find<LiveChatController>()
-                .updateMessageList(eventResponseMap["message"]);
-
-            log("Got channel event messageData11: ${Get.find<LiveChatController>().messageList} 888");
-
-            log("${Get.find<LiveChatController>().getLiveChatMessagesModel.data} 555");
-          });
-      pusherChannels.connect();
-    } catch (e) {
-      log("ERROR: $e");
-    }
-    log("${pusherChannels.channels.toString()} PUSHERDATA");
-    log("${eventResponseMap['channel'].toString()} CHANNELNAME2");
+    _initPusher();
   }
 
-  dynamic onAuthorizer(String channelName, String socketId, dynamic options) {
-    log("OnAuthorizer: $channelName OnAuthorizerSocket: $socketId");
-
-    String calculateHMAC(String secret, String stringToSign) {
-      final secretKey = utf8.encode(secret);
-      final message = utf8.encode(stringToSign);
-      final hmac = Hmac(sha256, secretKey);
-      final digest = hmac.convert(message);
-      final signature = digest.toString();
-      return signature;
+  Future<void> _initPusher() async {
+    if (_pusherAppKey.isEmpty) {
+      log("LiveChatScreen: pusherAppKey is empty – check settings API response");
+      return;
     }
 
-    final secret = AppConfigs.pusherAppSecret;
-    final stringToSign = '$socketId:$channelName';
+    try {
+      await pusherChannels.init(
+        apiKey: _pusherAppKey,
+        cluster: _pusherAppCluster,
+        logToConsole: true,
+        onConnectionStateChange: _onConnectionStateChange,
+        onError: _onError,
+        onSubscriptionSucceeded: _onSubscriptionSucceeded,
+        onEvent: _onGlobalEvent,
+        onSubscriptionError: _onSubscriptionError,
+        onDecryptionFailure: _onDecryptionFailure,
+        onMemberAdded: _onMemberAdded,
+        onMemberRemoved: _onMemberRemoved,
+        onAuthorizer: _onAuthorizer,
+      );
 
-    final signature = calculateHMAC(secret, stringToSign);
+      await pusherChannels.subscribe(
+        channelName: _channelName,
+        onEvent: (event) {
+          log("LiveChat event received: ${event.data}");
+          if (event.data == null || (event.data as String).isEmpty) return;
 
-    final auth = '$_apiKey:$signature';
+          try {
+            final decoded =
+            jsonDecode(event.data as String) as Map<String, dynamic>;
+            final message = decoded["message"];
+            if (message != null) {
+              Get.find<LiveChatController>().updateMessageList(message);
+              _scrollToBottom();
+            }
+          } catch (e) {
+            log("LiveChat: decode error – $e");
+          }
+        },
+      );
 
-    print('auth = $auth');
+      await pusherChannels.connect();
+      log("LiveChat: Connected to Pusher, subscribed to $_channelName");
+    } catch (e) {
+      log("LiveChat Pusher init error: $e");
+    }
+  }
 
+  // ─── Pusher private channel auth (HMAC-SHA256) ────────────────────────────
+  dynamic _onAuthorizer(String channelName, String socketId, dynamic options) {
+    if (_pusherAppSecret.isEmpty || _pusherAppKey.isEmpty) {
+      log("LiveChat: Pusher credentials missing for auth");
+      return {"auth": ""};
+    }
+
+    final stringToSign = "$socketId:$channelName";
+    final secretBytes  = utf8.encode(_pusherAppSecret);
+    final msgBytes     = utf8.encode(stringToSign);
+    final signature    = Hmac(sha256, secretBytes).convert(msgBytes).toString();
+    final auth         = "$_pusherAppKey:$signature";
+
+    log("LiveChat: Auth generated for $channelName");
     return {"auth": auth};
   }
 
-  void onConnectionStateChange(dynamic currentState, dynamic previousState) {
-    if (currentState == "CONNECTING" || currentState == "RECONNECTING") {
-      Get.find<GeneralController>().updateCallLoaderController(true);
-      log("Connecting Loader");
-    } else if (currentState == "CONNECTED") {
-      Get.find<GeneralController>().updateCallLoaderController(false);
-      log("Connected Loader");
+  // ─── Pusher callbacks ─────────────────────────────────────────────────────
+  void _onGlobalEvent(PusherEvent event) {
+    log("Pusher global event: ${event.channelName} / ${event.eventName}");
+  }
+
+  void _onConnectionStateChange(dynamic current, dynamic previous) {
+    log("Pusher: $previous → $current");
+    if (current == "CONNECTING" || current == "RECONNECTING") {
+      _generalController.updateCallLoaderController(true);
+    } else if (current == "CONNECTED") {
+      _generalController.updateCallLoaderController(false);
     }
-    log("Connection: $currentState");
   }
 
-  void onError(String message, int? code, dynamic e) {
-    log("onError: $message code: $code exception: $e");
+  void _onError(String message, int? code, dynamic e) =>
+      log("Pusher error: $message code: $code ex: $e");
+
+  void _onSubscriptionSucceeded(String channelName, dynamic data) =>
+      log("Subscribed: $channelName");
+
+  void _onSubscriptionError(String message, dynamic e) =>
+      log("Sub error: $message ex: $e");
+
+  void _onDecryptionFailure(String event, String reason) =>
+      log("Decrypt fail: $event reason: $reason");
+
+  void _onMemberAdded(String channelName, PusherMember member) =>
+      log("Member added: $channelName – $member");
+
+  void _onMemberRemoved(String channelName, PusherMember member) =>
+      log("Member removed: $channelName – $member");
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  void _scrollToBottom() {
+    final ctrl = _liveChatLogic.chatScrollController;
+    if (ctrl == null || !ctrl.hasClients) return;
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (ctrl.hasClients) {
+        ctrl.animateTo(
+          ctrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
-  onEvent(PusherEvent event) {
-    log("onEvent: ${event.data}");
-  }
+  void _sendMessage() {
+    final text = _liveChatLogic.messageController.text.trim();
+    if (text.isEmpty) return;
 
-  void onSubscriptionSucceeded(String channelName, dynamic data) {
-    log("onSubscriptionSucceeded: $channelName data: $data");
-    final me = pusherChannels.getChannel(channelName)?.me;
-    log("Me: $me");
-  }
+    _generalController.focusOut(context);
 
-  void onSubscriptionError(String message, dynamic e) {
-    log("onSubscriptionError: $message Exception: $e");
-  }
+    postMethod(
+      context,
+      sendMessageUrl,
+      {
+        'appointment_id':
+        _generalController.selectedAppointmentHistoryForView.id,
+        'attachment_file': null,
+        'message': text,
+      },
+      true,
+      sendMessagesRepo,
+    );
 
-  void onDecryptionFailure(String event, String reason) {
-    log("onDecryptionFailure: $event reason: $reason");
-  }
-
-  void onMemberAdded(String channelName, PusherMember member) {
-    log("onMemberAdded: $channelName user: $member");
-  }
-
-  void onMemberRemoved(String channelName, PusherMember member) {
-    log("onMemberRemoved: $channelName user: $member");
-  }
-
-  void onSubscriptionCount(String channelName, int subscriptionCount) {
-    log("onSubscriptionCount: $channelName subscriptionCount: $subscriptionCount");
-  }
-
-  void onTriggerEventPressed() {
-    pusherChannels
-        .trigger(PusherEvent(channelName: _channelName, eventName: _eventName));
-    log("TRIGGERSUCCESS");
+    _liveChatLogic.messageController.clear();
   }
 
   @override
+  void dispose() {
+    pusherChannels.unsubscribe(channelName: _channelName);
+    pusherChannels.disconnect();
+    super.dispose();
+  }
+
+  // ─── UI ───────────────────────────────────────────────────────────────────
+  @override
   Widget build(BuildContext context) {
-    return GetBuilder<GeneralController>(builder: (generalController) {
-      return GetBuilder<LiveChatController>(builder: (liveChatController) {
-        return ModalProgressHUD(
-          progressIndicator: const CircularProgressIndicator(
-            color: AppColors.primaryColor,
-          ),
-          inAsyncCall: generalController.callLoaderController,
-          child: Scaffold(
-            backgroundColor: AppColors.white,
-            appBar: PreferredSize(
-              preferredSize: const Size.fromHeight(56),
-              child: AppBarWidget(
-                leadingIcon: 'assets/icons/Expand_left.png',
-                leadingOnTap: () {
-                  Get.back();
-                  pusherChannels.unsubscribe(channelName: _channelName);
-                  pusherChannels.disconnect();
-                },
-                titleText: generalController
-                    .selectedAppointmentHistoryForView.studentName!,
-              ),
-            ),
-            bottomNavigationBar: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(5.w, 0, 5.w, 10.h),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      style: TextStyle(
-                        fontFamily: AppFont.primaryFontFamily,
-                        fontSize: 14.sp,
-                        color: AppColors.white,
-                      ),
-                      controller: liveChatController.messageController,
-                      onTap: () {
-                        Future.delayed(const Duration(seconds: 1)).whenComplete(
-                            () => liveChatController.chatScrollController!
-                                .animateTo(
-                                    liveChatController.chatScrollController!
-                                        .position.maxScrollExtent,
-                                    curve: Curves.easeOut,
-                                    duration:
-                                        const Duration(milliseconds: 500)));
-                      },
-                      textInputAction: TextInputAction.send,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      onChanged: (value) {
-                        // if (_chatLogic.messageController.text.isEmpty) {
-                        //   _chatLogic.updateShowSendIcon(false);
-                        // } else {
-                        //   _chatLogic.updateShowSendIcon(true);
-                        // }
-                      },
-                      onFieldSubmitted: (value) {
-                        // Get.find<GeneralController>()
-                        //     .notificationRouteApp = null;
-                        generalController.focusOut(context);
-                        postMethod(
-                            context,
-                            sendMessageUrl,
-                            {
-                              'appointment_id': generalController
-                                  .selectedAppointmentHistoryForView.id,
-                              'attachment_file': null,
-                              'message':
-                                  liveChatController.messageController.text
-                            },
-                            true,
-                            sendMessagesRepo);
-                      },
-                      // textDirection: generalController.isDirectionRTL(context) ? TextDirection.rtl : TextDirection.ltr,
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 10.h, horizontal: 20.w),
-                        filled: true,
-                        fillColor: AppColors.primaryColor,
-                        hintText: 'Your Text Here.....',
-                        hintStyle: AppTextStyles.bodyTextStyle16,
-                        // hintStyle: state.textFieldTextStyle,
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14.r),
-                            borderSide: const BorderSide(color: Colors.white)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14.r),
-                            borderSide: const BorderSide(
-                                color: AppColors.primaryColor)),
-                        errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14.r),
-                            borderSide: const BorderSide(color: Colors.red)),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14.r),
-                            borderSide: const BorderSide(color: Colors.white)),
-                      ),
-                    ),
+    return GetBuilder<GeneralController>(
+      builder: (generalController) {
+        return GetBuilder<LiveChatController>(
+          builder: (liveChatController) {
+            return ModalProgressHUD(
+              progressIndicator: const CircularProgressIndicator(
+                  color: AppColors.primaryColor),
+              inAsyncCall: generalController.callLoaderController,
+              child: Scaffold(
+                backgroundColor: AppColors.white,
+                appBar: PreferredSize(
+                  preferredSize: const Size.fromHeight(56),
+                  child: AppBarWidget(
+                    leadingIcon: 'assets/icons/Expand_left.png',
+                    leadingOnTap: () {
+                      pusherChannels.unsubscribe(channelName: _channelName);
+                      pusherChannels.disconnect();
+                      Get.back();
+                    },
+                    titleText: generalController
+                        .selectedAppointmentHistoryForView.studentName ??
+                        "",
                   ),
-                  // _chatLogic.showSendIcon!
-                  //     ?
-                  Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(10.w, 0, 0, 0),
-                    child: InkWell(
-                      onTap: () {
-                        // Get.find<GeneralController>().notificationRouteApp = null;
-                        generalController.focusOut(context);
-                        postMethod(
-                            context,
-                            sendMessageUrl,
-                            {
-                              'appointment_id': generalController
-                                  .selectedAppointmentHistoryForView.id,
-                              'attachment_file': null,
-                              'message':
-                                  liveChatController.messageController.text
-                            },
-                            true,
-                            sendMessagesRepo);
-                      },
-                      child: const CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.primaryColor,
-                        child: Icon(
-                          Icons.send,
-                          color: AppColors.white,
-                          size: 20,
+                ),
+
+                // ── Input bar ──
+                bottomNavigationBar: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(5.w, 0, 5.w, 10.h),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          style: TextStyle(
+                            fontFamily: AppFont.primaryFontFamily,
+                            fontSize: 14.sp,
+                            color: AppColors.white,
+                          ),
+                          controller: liveChatController.messageController,
+                          onTap: _scrollToBottom,
+                          textInputAction: TextInputAction.send,
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          onFieldSubmitted: (_) => _sendMessage(),
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.h, horizontal: 20.w),
+                            filled: true,
+                            fillColor: AppColors.primaryColor,
+                            hintText: 'Type a message...',
+                            hintStyle: AppTextStyles.bodyTextStyle16,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14.r),
+                              borderSide:
+                              const BorderSide(color: Colors.white),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14.r),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primaryColor),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14.r),
+                              borderSide:
+                              const BorderSide(color: Colors.red),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14.r),
+                              borderSide:
+                              const BorderSide(color: Colors.white),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                  // : const SizedBox()
+                      Padding(
+                        padding:
+                        EdgeInsetsDirectional.fromSTEB(10.w, 0, 0, 0),
+                        child: InkWell(
+                          onTap: _sendMessage,
+                          child: const CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColors.primaryColor,
+                            child: Icon(Icons.send,
+                                color: AppColors.white, size: 20),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                body: _buildBody(liveChatController, generalController),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(
+      LiveChatController liveChatController,
+      GeneralController generalController,
+      ) {
+    // Show spinner while loading history
+    if (liveChatController.getMessagesLoader) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (liveChatController.messageList.isEmpty) {
+      return Center(
+        child: Text(
+          "No messages yet.\nSay hello! 👋",
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodyTextStyle13,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
+      child: ListView.builder(
+        controller: liveChatController.chatScrollController,
+        itemCount: liveChatController.messageList.length,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemBuilder: (context, index) {
+          final msg       = liveChatController.messageList[index];
+          final isTeacher = msg["sender_id"] ==
+              generalController
+                  .selectedAppointmentHistoryForView.teacherId;
+
+          return Align(
+            alignment:
+            isTeacher ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              margin: EdgeInsets.only(bottom: 8.h),
+              padding: EdgeInsets.fromLTRB(10.w, 12.h, 10.w, 12.h),
+              constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75),
+              decoration: BoxDecoration(
+                color: isTeacher
+                    ? AppColors.primaryColor
+                    : AppColors.primaryColor.withOpacity(0.6),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12.r),
+                  topRight: Radius.circular(12.r),
+                  bottomLeft: isTeacher
+                      ? Radius.circular(12.r)
+                      : Radius.circular(2.r),
+                  bottomRight: isTeacher
+                      ? Radius.circular(2.r)
+                      : Radius.circular(12.r),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${msg["message"]}",
+                    style: AppTextStyles.bodyTextStyle16,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    generalController
+                        .displayDateTime("${msg["created_at"]}"),
+                    style: AppTextStyles.bodyTextStyle4,
+                  ),
                 ],
               ),
             ),
-            body: !liveChatController.getMessagesLoader
-                ? Padding(
-                    padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
-                    child: liveChatController.messageList.isNotEmpty
-                        ? ListView(
-                            controller: liveChatController.chatScrollController,
-                            children: List.generate(
-                              liveChatController.messageList.length,
-                              (index) {
-                                return Align(
-                                  alignment: liveChatController
-                                                  .messageList[index]
-                                              ["sender_id"] ==
-                                          generalController
-                                              .selectedAppointmentHistoryForView
-                                              .teacherId
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: Container(
-                                    margin:
-                                        EdgeInsets.fromLTRB(0.w, 0.h, 0.w, 8.h),
-                                    padding: EdgeInsets.fromLTRB(
-                                        10.w, 12.h, 10.w, 12.h),
-                                    decoration: BoxDecoration(
-                                        color: liveChatController
-                                                        .messageList[index]
-                                                    ["sender_id"] ==
-                                                generalController
-                                                    .selectedAppointmentHistoryForView
-                                                    .teacherId
-                                            ? AppColors.primaryColor
-                                            : AppColors.primaryColor
-                                                .withOpacity(0.6),
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "${liveChatController.messageList[index]["message"]}",
-                                          style: AppTextStyles.bodyTextStyle16,
-                                        ),
-                                        SizedBox(height: 6.h),
-                                        Text(
-                                          generalController.displayDateTime(
-                                              "${liveChatController.messageList[index]["created_at"]}"),
-                                          style: AppTextStyles.bodyTextStyle4,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          )
-                        : Container(),
-                  )
-                : Container(),
-          ),
-        );
-      });
-    });
+          );
+        },
+      ),
+    );
   }
 }

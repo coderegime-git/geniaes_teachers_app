@@ -177,26 +177,16 @@ class _State extends State<JoinChannelAudio> {
   // }
 
   _joinChannel() async {
-    // if (defaultTargetPlatform == TargetPlatform.android) {
-    //   await Permission.microphone.request();
-    // }
-
-    // await _engine
-    //     .joinChannel(
-    //         Get.find<GeneralController>().tokenForCall,
-    //         Get.find<GeneralController>().channelForCall!,
-    //         null,
-    //         Get.find<GeneralController>().callerType)
-    //     .catchError((onError) {});
     if (defaultTargetPlatform == TargetPlatform.android) {
       await Permission.microphone.request();
     }
 
+    final gc = Get.find<GeneralController>();
     await _engine
         .joinChannel(
-          token: Get.find<GeneralController>().tokenForCall!,
-          channelId: Get.find<GeneralController>().channelForCall!,
-          uid: Get.find<GeneralController>().callerType,
+          token: gc.tokenForCall ?? "",      // null-safe: "" = no-token mode
+          channelId: gc.channelForCall!,
+          uid: gc.callerType,
           options: const ChannelMediaOptions(),
         )
         .catchError((onError) {});

@@ -445,7 +445,7 @@ addUserProfileCertificateDataRepo(
       dio_instance.FormData.fromMap(<String, dynamic>{
     'name': name,
     'description': description,
-    'file': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
     'is_active': 1,
   });
   dio_instance.Dio dio = dio_instance.Dio();
@@ -610,7 +610,7 @@ addUserProfileExperienceDataRepo(
     'description': description,
     'from': from,
     'to': to,
-    'file': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
     'is_active': 1,
   });
   dio_instance.Dio dio = dio_instance.Dio();
@@ -779,7 +779,7 @@ addUserProfileEducationDataRepo(
     'to': to,
     'degree': degree,
     'subject': subject,
-    'file': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
     'is_active': 1,
   });
   dio_instance.Dio dio = dio_instance.Dio();
@@ -934,7 +934,8 @@ addUserProfilePodcastDataRepo(
   String? description,
   String? fileType,
   String? linkType,
-  String? tagId,
+  String? categoryId,
+  dynamic tagIds,
   String? fileURL,
   File? file1,
   File? audioFile,
@@ -947,9 +948,10 @@ addUserProfilePodcastDataRepo(
     'description': description,
     'file_type': fileType,
     'link_type': linkType,
-    'tag_ids[]': tagId,
+    'podcast_category_id': categoryId,
+    'tag_ids[]': tagIds,
     'file_url': fileURL,
-    'file': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
     'audio': await dio_instance.MultipartFile.fromFile(audioFile!.path),
     'video': await dio_instance.MultipartFile.fromFile(videoFile!.path),
     'is_active': 1,
@@ -1052,5 +1054,191 @@ addUserProfilePodcastDataRepo(
           );
         });
     log('Exception..${e.response}');
+  }
+}
+
+addUserProfileEventDataRepo(
+  String? name,
+  String? description,
+  String? categoryId,
+  dynamic tagIds,
+  String? startDate,
+  String? endDate,
+  String? addressLine1,
+  String? addressLine2,
+  File? file1,
+) async {
+  dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
+    'name': name,
+    'description': description,
+    'event_category_id': categoryId,
+    'tag_ids[]': tagIds,
+    'start_date': startDate,
+    'end_date': endDate,
+    'address_line_1': addressLine1,
+    'address_line_2': addressLine2,
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'is_active': 1,
+  });
+  dio_instance.Dio dio = dio_instance.Dio();
+  setAcceptHeader(dio);
+  setContentHeader(dio);
+  setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
+  setCustomHeader(dio, 'logged-in-as', 'teacher');
+  setCustomHeader(dio, 'Content-Type', 'application/json');
+  
+  try {
+    await dio.post(addEditUserProfileEventURL, data: formData);
+    Get.find<GeneralController>().updateFormLoaderController(false);
+  } catch (e) {
+    log('Exception..$e');
+    Get.find<GeneralController>().updateFormLoaderController(false);
+  }
+}
+
+addUserProfileBlogDataRepo(
+  String? name,
+  String? description,
+  String? categoryId,
+  dynamic tagIds,
+  File? file1,
+) async {
+  dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
+    'name': name,
+    'description': description,
+    'blog_category_id': categoryId,
+    'tag_ids[]': tagIds,
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'is_active': 1,
+  });
+  dio_instance.Dio dio = dio_instance.Dio();
+  setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
+  setCustomHeader(dio, 'logged-in-as', 'teacher');
+  log('=== SENDING BLOG DATA ===');
+  log('URL: $addEditUserProfileBlogURL');
+  log('Name: $name');
+  log('Description: $description');
+  log('Category ID: $categoryId');
+  log('Tag IDs: $tagIds');
+  log('File Path: ${file1?.path}');
+  log('File Size: ${file1 != null ? file1.lengthSync() : 'No file'} bytes');
+  log('File Name: ${file1?.path.split('/').last}');
+  log('========================');
+  try {
+    log('=== SENDING BLOG DATA === ${formData}');
+    final response = await dio.post(addEditUserProfileBlogURL, data: formData);
+
+    // Log response
+    log('=== BLOG RESPONSE ===');
+    log('Status Code: ${response.statusCode}');
+    log('Response Data: ${response.data}');
+    log('Headers: ${response.headers}');
+    log('=====================');
+
+    // Check if response is successful
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      Get.find<GeneralController>().updateFormLoaderController(false);
+
+      // Return success with response data
+      return {
+        'success': true,
+        'data': response.data,
+        'message': 'Blog added successfully'
+      };
+    } else {
+      Get.find<GeneralController>().updateFormLoaderController(false);
+
+      return {
+        'success': false,
+        'message': 'Failed to add blog',
+        'data': response.data
+      };
+    }
+
+  } on dio_instance.DioError catch (e) {
+    // Detailed Dio error logging
+    log('=== DIO ERROR ===');
+    log('Error Type: ${e.type}');
+    log('Error Message: ${e.message}');
+    log('Status Code: ${e.response?.statusCode}');
+    log('Error Data: ${e.response?.data}');
+    log('Request Path: ${e.requestOptions.path}');
+    log('Request Method: ${e.requestOptions.method}');
+    log('Request Headers: ${e.requestOptions.headers}');
+    log('=================');
+
+    Get.find<GeneralController>().updateFormLoaderController(false);
+
+    return {
+      'success': false,
+      'message': e.message ?? 'Network error occurred',
+      'statusCode': e.response?.statusCode,
+      'errorData': e.response?.data
+    };
+  } catch (e) {
+    log('Exception..$e');
+    Get.find<GeneralController>().updateFormLoaderController(false);
+  }
+}
+
+addUserProfileServiceDataRepo(
+  String? name,
+  String? description,
+  String? categoryId,
+  dynamic tagIds,
+  String? price,
+  File? file1,
+) async {
+  dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
+    'name': name,
+    'description': description,
+    'service_category_id': categoryId,
+    'tag_ids[]': tagIds,
+    'price': price,
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'is_active': 1,
+  });
+  dio_instance.Dio dio = dio_instance.Dio();
+  setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
+  setCustomHeader(dio, 'logged-in-as', 'teacher');
+  
+  try {
+    await dio.post(addEditUserProfileServiceURL, data: formData);
+    Get.find<GeneralController>().updateFormLoaderController(false);
+  } catch (e) {
+    log('Exception..$e');
+    Get.find<GeneralController>().updateFormLoaderController(false);
+  }
+}
+
+addUserProfileBroadcastDataRepo(
+  String? name,
+  String? description,
+  String? categoryId,
+  dynamic tagIds,
+  String? fileType,
+  String? fileURL,
+  File? file1,
+) async {
+  dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
+    'name': name,
+    'description': description,
+    'broadcast_category_id': categoryId,
+    'tag_ids[]': tagIds,
+    'file_type': fileType,
+    'file_url': fileURL,
+    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'is_active': 1,
+  });
+  dio_instance.Dio dio = dio_instance.Dio();
+  setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
+  setCustomHeader(dio, 'logged-in-as', 'teacher');
+  
+  try {
+    await dio.post(addEditUserProfileBroadcastURL, data: formData);
+    Get.find<GeneralController>().updateFormLoaderController(false);
+  } catch (e) {
+    log('Exception..$e');
+    Get.find<GeneralController>().updateFormLoaderController(false);
   }
 }

@@ -145,10 +145,11 @@ class _State extends State<JoinChannelVideo> {
       await [Permission.microphone, Permission.camera].request();
     }
 
+    final gc = Get.find<GeneralController>();
     await _engine.joinChannel(
-      token: Get.find<GeneralController>().tokenForCall!,
-      channelId: Get.find<GeneralController>().channelForCall!,
-      uid: Get.find<GeneralController>().callerType,
+      token: gc.tokenForCall ?? "",          // null-safe: "" = no-token mode
+      channelId: gc.channelForCall!,
+      uid: gc.callerType,
       options: const ChannelMediaOptions(),
     );
 
