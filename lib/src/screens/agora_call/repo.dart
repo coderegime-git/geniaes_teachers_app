@@ -7,139 +7,96 @@ import '../../api_services/urls.dart';
 import '../../controllers/general_controller.dart';
 import 'get_agora_token_model.dart';
 
+// ─── getAgoraTokenRepo ────────────────────────────────────────────────────────
+/// Called when the teacher fetches the Agora token from the backend.
+/// Saves the token into GeneralController so the call screens can use it.
 getAgoraTokenRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
   if (responseCheck) {
     Get.find<GeneralController>().getAgoraTokenModel =
         GetAgoraTokenModel.fromJson(response);
+
     if (Get.find<GeneralController>().getAgoraTokenModel.success == true) {
       Get.find<GeneralController>().updateFormLoaderController(false);
       Get.find<GeneralController>().updateCallerType(1);
+
+      // data is the token string directly (teacher model).
       Get.find<GeneralController>().updateTokenForCall(
           Get.find<GeneralController>().getAgoraTokenModel.data!);
-      if (Get.find<GeneralController>().goForCall!) {
-        // Get.find<GeneralController>().updateTokenForCall(
-        //     Get.find<GeneralController>().getAgoraTokenModel.data!);
 
-        ///---make-notification
-        // Get.find<GeneralController>().updateNotificationBody(
-        //     'CALLING.....',
-        //     'Your ${Get.find<GeneralController>().storageBox.read('userRole')} is calling you',
-        //     '/videoCall',
-        //     '/mentee/appointment-log-detail/${Get.find<GeneralController>().appointmentIdForSendNotification}'
-        //         '?auth_tocken=${Get.find<GeneralController>().getAgoraTokenModel.data!}'
-        //         '&channel_name=${Get.find<GeneralController>().channelForCall}',
-        //     'ring_ring');
-
-        // getMethod(
-        //     context,
-        //     fcmGetUrl,
-        //     {
-        //       'token': '123',
-        //       'user_id': Get.find<GeneralController>().userIdForSendNotification
-        //     },
-        //     true,
-        //     getFcmTokenRepo);
-
-        // Get.offNamed(PageRoutes.videoCallScreen);
-      }
+      log('getAgoraTokenRepo: token saved successfully');
     } else {
       Get.find<GeneralController>().updateFormLoaderController(false);
+      log('getAgoraTokenRepo: success=false – ${response['message']}');
     }
-  } else if (!responseCheck) {
+  } else {
     Get.find<GeneralController>().updateFormLoaderController(false);
+    log('getAgoraTokenRepo: request failed – $response');
   }
 }
 
+// ─── makeAgoraCallRepo ────────────────────────────────────────────────────────
+/// Called once the call screen is open. Sends an FCM push notification to the
+/// student via the backend, carrying channel_name, token and call_type so the
+/// student app can open the correct screen.
 makeAgoraCallRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
-  if (responseCheck) {
-    // Get.find<GeneralController>().getAgoraTokenModel =
-    //     GetAgoraTokenModel.fromJson(response);
-    // if (Get.find<GeneralController>().getAgoraTokenModel.success == true) {
-    //   Get.find<GeneralController>().updateFormLoaderController(false);
-    //   Get.find<GeneralController>().updateCallerType(1);
-    //   Get.find<GeneralController>().updateTokenForCall(
-    //       Get.find<GeneralController>().getAgoraTokenModel.data!);
-    //   if (Get.find<GeneralController>().goForCall!) {
-    //     // Get.find<GeneralController>().updateTokenForCall(
-    //     //     Get.find<GeneralController>().getAgoraTokenModel.data!);
-
-    postMethod(
-        context,
-        sendCallNotification,
-        {
-          "title":
-              "${Get.find<GeneralController>().appointmentObject!["appointment_type_name"]} from Teacher",
-          "body": "Please Join the Call",
-          "deep_link":
-              "${"/appointment_log/detail/${Get.find<GeneralController>().appointmentObject!["id"].toString()}"}?auth_tocken=${Get.find<GeneralController>().tokenForCall!}&channel_name=${Get.find<GeneralController>().channelForCall!}",
-          "reciever_id":
-              Get.find<GeneralController>().appointmentObject!["student_id"],
-          "payload": {
-            "appointment": Get.find<GeneralController>().appointmentObject,
-            "channel_name": Get.find<GeneralController>().channelForCall,
-            "token": Get.find<GeneralController>().tokenForCall
-          }
-        },
-        true,
-        sendCallNotificationRepo);
-
-    //     // getMethod(
-    //     //     context,
-    //     //     fcmGetUrl,
-    //     //     {
-    //     //       'token': '123',
-    //     //       'user_id': Get.find<GeneralController>().userIdForSendNotification
-    //     //     },
-    //     //     true,
-    //     //     getFcmTokenRepo);
-
-    //     // Get.offNamed(PageRoutes.videoCallScreen);
-    //   }
-    // } else {
-    //   Get.find<GeneralController>().updateFormLoaderController(false);
-    // }
-  } else if (!responseCheck) {
-    log("$response RESPONSE");
-    Get.find<GeneralController>().updateFormLoaderController(false);
+  if (!responseCheck) {
+    log('makeAgoraCallRepo: makeAgoraCall API failed – $response');
   }
+  // Even if makeAgoraCall fails or succeeds, we should explicitly send the notification using the new route.
+  sendCallNotificationToStudent(context);
 }
 
+void sendCallNotificationToStudent(BuildContext context) {
+  final gc = Get.find<GeneralController>();
+
+  // appointmentObject is set in AppointmentDetailScreen.initState()
+  final appt          = gc.appointmentObject!;
+  final appointmentId = appt['id'].toString();
+  final channelName   = gc.channelForCall!;
+  final token         = gc.tokenForCall ?? '';
+  final typeId        = appt['appointment_type_id'];         // 1=video,2=audio,3=chat
+
+  // Derive human-readable call type label for the notification title.
+  final callLabel = typeId == 1
+      ? 'Video Call'
+      : typeId == 2
+          ? 'Audio Call'
+          : 'Live Chat';
+
+  postMethod(
+      context,
+      sendCallNotification,
+      {
+        'title': '$callLabel from Teacher',
+        'body': 'Please join the $callLabel. Tap to open.',
+        'deep_link':
+            '/appointment_log/detail/$appointmentId'
+            '?auth_tocken=$token'
+            '&channel_name=$channelName'
+            '&call_type=$typeId',
+        'reciever_id': appt['student_id'],
+        'payload': {
+          'appointment'  : appt,
+          'channel_name' : channelName,
+          'token'        : token,
+          'call_type'    : typeId,        // ← NEW: lets student open correct screen
+          'call_label'   : callLabel,
+        },
+      },
+      true,
+      sendCallNotificationRepo);
+}
+
+// ─── sendCallNotificationRepo ─────────────────────────────────────────────────
+/// Response handler for the send-notification API call.
 sendCallNotificationRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
   if (responseCheck) {
-    log("$response SEND NOTIFICATION RESPONSE");
-    // Get.find<GeneralController>().getAgoraTokenModel =
-    //     GetAgoraTokenModel.fromJson(response);
-    // if (Get.find<GeneralController>().getAgoraTokenModel.success == true) {
-    //   Get.find<GeneralController>().updateFormLoaderController(false);
-    //   Get.find<GeneralController>().updateCallerType(1);
-    //   Get.find<GeneralController>().updateTokenForCall(
-    //       Get.find<GeneralController>().getAgoraTokenModel.data!);
-    //   if (Get.find<GeneralController>().goForCall!) {
-    //     // Get.find<GeneralController>().updateTokenForCall(
-    //     //     Get.find<GeneralController>().getAgoraTokenModel.data!);
-
-    ///---make-notification
-
-    //     // getMethod(
-    //     //     context,
-    //     //     fcmGetUrl,
-    //     //     {
-    //     //       'token': '123',
-    //     //       'user_id': Get.find<GeneralController>().userIdForSendNotification
-    //     //     },
-    //     //     true,
-    //     //     getFcmTokenRepo);
-
-    //     // Get.offNamed(PageRoutes.videoCallScreen);
-    //   }
-    // } else {
-    //   Get.find<GeneralController>().updateFormLoaderController(false);
-    // }
-  } else if (!responseCheck) {
-    log("$response NOT SEND NOTIFICATION RESPONSE");
+    log('sendCallNotificationRepo: notification sent – $response');
+  } else {
+    log('sendCallNotificationRepo: notification send FAILED – $response');
     Get.find<GeneralController>().updateFormLoaderController(false);
   }
 }

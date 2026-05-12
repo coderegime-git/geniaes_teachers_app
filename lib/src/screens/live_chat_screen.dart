@@ -19,6 +19,7 @@ import '../controllers/general_controller.dart';
 import '../controllers/live_chat_controller.dart';
 import '../repositories/live_chat_messages_repo.dart';
 import '../widgets/appbar_widget.dart';
+import 'agora_call/repo.dart';
 
 /// LiveChatScreen — uses Pusher credentials from GetAllSettingsController
 /// Channel: "private-chat-message.{appointmentId}"
@@ -72,6 +73,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
 
     _initPusher();
+    
+    // Notify student via push notification
+    // sendCallNotificationToStudent(context);
   }
 
   Future<void> _initPusher() async {
@@ -99,14 +103,23 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       await pusherChannels.subscribe(
         channelName: _channelName,
         onEvent: (event) {
-          log("LiveChat event received: ${event.data}");
+          log("LiveChat event received [${event.eventName}]: ${event.data}");
+          
+          // Ignore internal Pusher events like pusher:subscription_succeeded
+          if (event.eventName.startsWith('pusher:')) return;
+          
           if (event.data == null || (event.data as String).isEmpty) return;
 
           try {
             final decoded =
             jsonDecode(event.data as String) as Map<String, dynamic>;
-            final message = decoded["message"];
-            if (message != null) {
+            
+            // The Laravel backend usually wraps the data in the model name or "message"
+            // We check for "message" key, or if the root is the message itself.
+            dynamic message = decoded["message"] ?? decoded;
+            
+            if (message != null && message is Map) {
+              // Ensure we don't duplicate messages we already sent (if socketId isn't excluded)
               Get.find<LiveChatController>().updateMessageList(message);
               _scrollToBottom();
             }
@@ -127,6 +140,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   dynamic _onAuthorizer(String channelName, String socketId, dynamic options) {
     if (_pusherAppSecret.isEmpty || _pusherAppKey.isEmpty) {
       log("LiveChat: Pusher credentials missing for auth");
+      Get.find<GeneralController>().updateCallLoaderController(false);
+      // Optionally show a snackbar:
+      Get.snackbar("Chat Error", "Unable to connect — missing credentials");
       return {"auth": ""};
     }
 
@@ -346,7 +362,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         itemCount: liveChatController.messageList.length,
         physics: const AlwaysScrollableScrollPhysics(),
         itemBuilder: (context, index) {
-          final msg       = liveChatController.messageList[index];
+          final msg = liveChatController.messageList[index];
+          if (msg == null) return const SizedBox.shrink();
+
           final isTeacher = msg["sender_id"] ==
               generalController
                   .selectedAppointmentHistoryForView.teacherId;

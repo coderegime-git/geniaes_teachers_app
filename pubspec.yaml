@@ -64,8 +64,7 @@ dependencies:
   percent_indicator: ^4.2.3
   global_configuration: 
   win32: ^5.7.0
-  pusher_beams:
-     path: lib/push-notifications-flutter/packages/pusher_beams
+  pusher_beams: ^1.1.2
 
 dev_dependencies:
   flutter_test:

@@ -169,7 +169,10 @@ class User {
         // _academyModules?.add(Dynamic.fromJson(v));
       });
     }
-    _loginInfo = json['login_info'] != null || json['login_info'] != []
+    // _loginInfo = json['login_info'] != null || json['login_info'] != []
+    //     ? LoginInfo.fromJson(json['login_info'])
+    //     : null;
+    _loginInfo = json['login_info'] != null
         ? LoginInfo.fromJson(json['login_info'])
         : null;
     _createdAt = json['created_at'];
@@ -354,7 +357,9 @@ class LoginInfo {
     _name = json['name'];
     _firstName = json['first_name'];
     _lastName = json['last_name'];
-    _description = json['description'];
+    // _description = json['description'] ?? null;
+    final rawDescription = json['description'];
+    _description = (rawDescription is String) ? rawDescription : null;
     _addressLine1 = json['address_line_1'];
     _addressLine2 = json['address_line_2'];
     _userName = json['user_name'];

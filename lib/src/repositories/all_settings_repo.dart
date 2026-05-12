@@ -18,11 +18,16 @@ getAllSettingsRepo(
 
     if (Get.find<GetAllSettingsController>().getAllSettingsModel.success ==
         true) {
-      PusherBeams.instance.start(Get.find<GetAllSettingsController>()
-          .getAllSettingsModel
-          .data!
-          .pusherBeamsInstanceId
-          .toString());
+      try {
+        PusherBeams.instance.start(Get.find<GetAllSettingsController>()
+            .getAllSettingsModel
+            .data!
+            .pusherBeamsInstanceId
+            .toString());
+        log("PusherBeams started successfully");
+      } catch (e) {
+        log("PusherBeams start error: $e");
+      }
     }
   } else if (!responseCheck) {
     Get.find<GetAllSettingsController>().updateAllSettingsLoader(false);

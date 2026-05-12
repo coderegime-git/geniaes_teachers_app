@@ -1,3 +1,7 @@
+plugins {
+    id("com.google.gms.google-services") version "4.4.2" apply false
+}
+
 allprojects {
     repositories {
         google()
@@ -21,4 +25,17 @@ subprojects {
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
+}
+
+subprojects {
+    if (project.name == "pusher_beams_android") {
+        project.plugins.withId("com.android.library") {
+            val android = project.extensions.getByName("android")
+            try {
+                val setNamespace = android.javaClass.getMethod("setNamespace", String::class.java)
+                setNamespace.invoke(android, "com.pusher.pusher_beams")
+            } catch (e: Exception) {
+            }
+        }
+    }
 }

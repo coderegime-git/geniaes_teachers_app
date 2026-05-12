@@ -13,14 +13,11 @@ import '../../api_services/post_service.dart';
 import '../../api_services/urls.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_font.dart';
-
 import '../../controllers/general_controller.dart';
-
 import '../../widgets/appbar_widget.dart';
 import 'agora.config.dart' as config;
 import 'repo.dart';
 
-/// MultiChannel Example
 class JoinChannelVideo extends StatefulWidget {
   const JoinChannelVideo({super.key});
 
@@ -28,157 +25,229 @@ class JoinChannelVideo extends StatefulWidget {
   State<StatefulWidget> createState() => _State();
 }
 
-class _State extends State<JoinChannelVideo> {
+class _State extends State<JoinChannelVideo> with WidgetsBindingObserver {
   late final RtcEngine _engine;
-  final formKey = GlobalKey<FormState>();
-  List<Map<String, dynamic>> patientHealths = [];
-  List<int>? selectedDiseasesIds;
-  List<int>? selectedMedicalTestsIds;
-  final List<Map<String, dynamic>> healthData = [
-    {
-      'selectedHealth': null,
-      'valueController': TextEditingController(),
-    }
-  ];
 
-  bool isJoined = false, switchCamera = true, switchRender = true;
-  // List<int> remoteUid = [];
+  bool _engineReady = false; // ← Guard: only render AgoraVideoView when true
+  bool isJoined = false;
   int? remoteUid;
-  bool localUserJoined = false;
-  _callEndCheckMethod() {
-    if (callEnd == 2) {
+  int? callEnd = 0;
+  bool muted = false;
+  bool _disposed = false;
+
+  Timer? _timer;
+
+  // ─── Lifecycle ────────────────────────────────────────────────────────────
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    log('JoinChannelVideo: initState – channel=${Get.find<GeneralController>().channelForCall}');
+
+    // 1. Notify student via backend (fires FCM notification to student).
+    postMethod(
+        context,
+        makeAgoraCall,
+        {
+          'appointment': {
+            'student_id': Get.find<GeneralController>()
+                .selectedAppointmentHistoryForView
+                .studentId,
+            'id': Get.find<GeneralController>()
+                .selectedAppointmentHistoryForView
+                .id,
+          },
+          'channel': Get.find<GeneralController>().channelForCall,
+          'token': Get.find<GeneralController>().tokenForCall,
+        },
+        true,
+        makeAgoraCallRepo);
+
+    // 2. Poll every 2 s for call-end state.
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) {
+      _callEndCheckMethod();
+    });
+
+    // 3. Init engine (properly awaited) then join channel.
+    _initAndJoin();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
+    _engine.leaveChannel();
+    _engine.release();
+    super.dispose();
+  }
+
+  /// Restart preview when app comes back to foreground (fixes black SurfaceView
+  /// after permission dialog or app-switch destroys the surface texture).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_engineReady || _disposed) return;
+    if (state == AppLifecycleState.resumed) {
+      log('JoinChannelVideo: app resumed – restarting preview');
+      _engine.enableLocalVideo(true);
+      _engine.startPreview();
+    } else if (state == AppLifecycleState.paused) {
+      // Optionally stop preview to free camera while backgrounded.
+      // _engine.stopPreview();
+    }
+  }
+
+  // ─── Engine setup ─────────────────────────────────────────────────────────
+
+  /// Initialises the RTC engine, registers event listeners (once!), then joins
+  /// the channel. All async so nothing races.
+  Future<void> _initAndJoin() async {
+    await _initEngine();
+    // Small delay lets the engine settle and the widget tree to mount so the
+    // AgoraVideoView SurfaceTexture is ready before preview starts.
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!_disposed) {
+      // Signal UI to show AgoraVideoView widgets (so SurfaceTexture is created).
+      setState(() => _engineReady = true);
+      // Wait one more frame for the widget to attach its texture.
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+    if (!_disposed) await _joinChannel();
+  }
+
+  Future<void> _initEngine() async {
+    // Wait for Agora App ID to be loaded if it's currently empty
+    int retryCount = 0;
+    while (config.agoraAppId.isEmpty && retryCount < 10 && !_disposed) {
+      log('Agora App ID is empty, waiting... (Attempt ${retryCount + 1})');
+      await Future.delayed(const Duration(milliseconds: 500));
+      retryCount++;
+    }
+
+    if (config.agoraAppId.isEmpty) {
+      log('JoinChannelVideo: Agora App ID is still empty after retries. Initialization aborted.');
+      return;
+    }
+
+    _engine = createAgoraRtcEngineEx();
+    await _engine.initialize(RtcEngineContext(
+      appId: config.agoraAppId,
+      channelProfile: ChannelProfileType.channelProfileCommunication,
+    ));
+
+    // Register handlers ONCE here – never again in _joinChannel.
+    _addListeners();
+
+    await _engine.enableVideo();
+    await _engine.enableLocalVideo(true);
+    await _engine.setVideoEncoderConfiguration(
+      const VideoEncoderConfiguration(
+        dimensions: VideoDimensions(width: 640, height: 360),
+        frameRate: 15,
+        bitrate: 800,
+        orientationMode: OrientationMode.orientationModeAdaptive,
+      ),
+    );
+
+    // NOTE: startPreview() is called AFTER _engineReady = true so the
+    // AgoraVideoView SurfaceTexture is already mounted when preview begins.
+
+    log('JoinChannelVideo: engine ready');
+  }
+
+  /// Registers all Agora event callbacks.  Called exactly ONCE per session.
+  void _addListeners() {
+    _engine.registerEventHandler(RtcEngineEventHandler(
+      onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+        log('JoinChannelVideo: joined channel ${connection.channelId}');
+        if (!_disposed) {
+          setState(() => isJoined = true);
+          // Start preview NOW after join so the local surface is ready.
+          _engine.startPreview();
+        }
+      },
+      onUserJoined: (RtcConnection connection, int uid, int elapsed) {
+        log('JoinChannelVideo: remote user $uid joined');
+        if (!_disposed) {
+          setState(() {
+            remoteUid = uid;
+            callEnd = 1;
+          });
+        }
+      },
+      onUserOffline: (RtcConnection connection, int uid,
+          UserOfflineReasonType reason) {
+        log('JoinChannelVideo: remote user $uid went offline');
+        if (!_disposed) {
+          setState(() {
+            if (callEnd == 1) callEnd = 2;
+            remoteUid = null;
+          });
+        }
+      },
+      onLeaveChannel: (RtcConnection connection, RtcStats stats) {
+        log('JoinChannelVideo: left channel');
+        if (!_disposed) {
+          setState(() {
+            isJoined = false;
+            remoteUid = null;
+          });
+        }
+      },
+      onLocalVideoStateChanged: (VideoSourceType source,
+          LocalVideoStreamState state, LocalVideoStreamReason error) {
+        log('JoinChannelVideo: localVideoState source=$source state=$state error=$error');
+      },
+      onCameraReady: () {
+        log('JoinChannelVideo: camera ready');
+      },
+    ));
+  }
+
+  Future<void> _joinChannel() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final statuses =
+          await [Permission.microphone, Permission.camera].request();
+      log('JoinChannelVideo: permissions → $statuses');
+    }
+
+    final gc = Get.find<GeneralController>();
+    log('JoinChannelVideo: joining channel=${gc.channelForCall} uid=${gc.callerType}');
+
+    await _engine.joinChannel(
+      token: gc.tokenForCall ?? '',
+      channelId: gc.channelForCall!,
+      uid: gc.callerType,
+      options: const ChannelMediaOptions(
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        publishCameraTrack: true,
+        publishMicrophoneTrack: true,
+        autoSubscribeAudio: true,
+        autoSubscribeVideo: true,
+      ),
+    );
+    log('JoinChannelVideo: joinChannel called');
+  }
+
+  Future<void> _leaveChannel() async {
+    await _engine.leaveChannel();
+  }
+
+  // ─── Call-end polling ─────────────────────────────────────────────────────
+
+  void _callEndCheckMethod() {
+    if (callEnd == 2 && !_disposed) {
       _leaveChannel();
       Get.back();
     }
   }
 
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    log("${Get.arguments[0]} ARGUMENT");
-    log("${Get.find<GeneralController>().appointmentObject} OBJECT");
-    postMethod(
-        context,
-        makeAgoraCall,
-        {
-          "appointment": {
-            "student_id": Get.find<GeneralController>()
-                .selectedAppointmentHistoryForView
-                .studentId,
-            "id": Get.find<GeneralController>()
-                .selectedAppointmentHistoryForView
-                .id
-          },
-          "channel": Get.find<GeneralController>().channelForCall,
-          "token": Get.find<GeneralController>().tokenForCall
-        },
-        true,
-        makeAgoraCallRepo);
-
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      _callEndCheckMethod();
-    });
-
-    Future.delayed(
-      const Duration(seconds: 2),
-    ).whenComplete(() => _joinChannel());
-    // }
-
-    _initEngine();
-  }
-
-  @override
-  void dispose() {
-    _timer!.cancel();
-    super.dispose();
-    _engine.release();
-  }
-
-  int? callEnd = 0;
-
-  _initEngine() async {
-    _engine = createAgoraRtcEngineEx();
-    await _engine.initialize(RtcEngineContext(
-      appId: config.agoraAppId,
-      channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
-    ));
-
-    _addListeners();
-
-    await _engine.enableVideo();
-    await _engine.startPreview();
-    await _engine.enableLocalVideo(true);
-
-    await _engine.setVideoEncoderConfiguration(
-      const VideoEncoderConfiguration(),
-    );
-  }
-
-  _addListeners() {
-    _engine.registerEventHandler(RtcEngineEventHandler(
-      onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-        isJoined = true;
-      },
-      onUserJoined: (RtcConnection connection, int uid, int elapsed) {
-        remoteUid = uid;
-        callEnd = 1;
-      },
-      onUserOffline:
-          (RtcConnection connection, int uid, UserOfflineReasonType reason) {
-        remoteUid = uid;
-        if (callEnd == 1) {
-          callEnd = 2;
-        }
-      },
-      onLeaveChannel: (RtcConnection connection, RtcStats stats) {
-        _leaveChannel();
-        isJoined = false;
-        remoteUid = null;
-      },
-    ));
-  }
-
-  Future<dynamic> _joinChannel() async {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      await [Permission.microphone, Permission.camera].request();
-    }
-
-    final gc = Get.find<GeneralController>();
-    await _engine.joinChannel(
-      token: gc.tokenForCall ?? "",          // null-safe: "" = no-token mode
-      channelId: gc.channelForCall!,
-      uid: gc.callerType,
-      options: const ChannelMediaOptions(),
-    );
-
-    _addListeners();
-  }
-
-  _leaveChannel() async {
-    await _engine.leaveChannel();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-        child: remoteVideo(),
-        onWillPop: () async {
-          return false;
-        });
-  }
-
-  void _onCallEnd(BuildContext context) {
-    Navigator.pop(context);
-  }
-
-  bool muted = false;
+  // ─── Controls ─────────────────────────────────────────────────────────────
 
   void _onToggleMute() {
-    setState(() {
-      muted = !muted;
-    });
+    setState(() => muted = !muted);
     _engine.muteLocalAudioStream(muted);
   }
 
@@ -186,284 +255,184 @@ class _State extends State<JoinChannelVideo> {
     _engine.switchCamera();
   }
 
+  // ─── Widgets ──────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    // ignore: deprecated_member_use
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // ── Full-screen remote video (or waiting view) ──
+            Positioned.fill(child: _remoteVideoOrWaiting()),
+
+            // ── Local camera PiP (top-right corner) ──
+            // Only rendered once the engine is ready to avoid LateInitializationError
+            if (_engineReady)
+              Positioned(
+                top: 50.h,
+                right: 16.w,
+                child: SizedBox(
+                  width: 120.w,
+                  height: 160.h,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.r),
+                    child: AgoraVideoView(
+                      controller: VideoViewController(
+                        rtcEngine: _engine,
+                        canvas: const VideoCanvas(uid: 0),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // ── Control toolbar (bottom) ──
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _toolbar(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Shows the remote participant's video full-screen, or a waiting screen.
+  Widget _remoteVideoOrWaiting() {
+    if (_engineReady && remoteUid != null) {
+      final gc = Get.find<GeneralController>();
+      return AgoraVideoView(
+        controller: VideoViewController.remote(
+          rtcEngine: _engine,
+          canvas: VideoCanvas(uid: remoteUid!),
+          connection: RtcConnection(channelId: gc.channelForCall),
+        ),
+      );
+    }
+
+    // Waiting / calling view while no remote user has joined.
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryColor,
+            AppColors.primaryColor.withOpacity(0.6),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.white24,
+              child: Icon(Icons.videocam, size: 50, color: Colors.white),
+            ),
+            SizedBox(height: 24.h),
+            Text(
+              LanguageConstant.videoCall.tr,
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontFamily: AppFont.primaryFontFamily,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              _engineReady
+                  ? (isJoined ? 'Ringing…' : 'Connecting…')
+                  : 'Initialising camera…',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontFamily: AppFont.primaryFontFamily,
+                color: Colors.white70,
+              ),
+            ),
+            if (!_engineReady) ...[
+              SizedBox(height: 16.h),
+              const CircularProgressIndicator(color: Colors.white54),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _toolbar() {
     return Container(
-      alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.symmetric(vertical: 48),
+      padding: EdgeInsets.symmetric(vertical: 32.h),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [Colors.black87, Colors.transparent],
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          RawMaterialButton(
+        children: [
+          // Mute / unmute
+          _controlButton(
+            icon: muted ? Icons.mic_off : Icons.mic,
+            color: muted ? AppColors.primaryColor : Colors.white,
+            iconColor: muted ? Colors.white : AppColors.primaryColor,
             onPressed: _onToggleMute,
-            shape: const CircleBorder(),
-            elevation: 2.0,
-            fillColor: muted ? AppColors.primaryColor : AppColors.white,
-            padding: const EdgeInsets.all(12.0),
-            child: Icon(
-              muted ? Icons.mic_off : Icons.mic,
-              color: muted ? Colors.white : AppColors.primaryColor,
-              size: 20.0,
-            ),
+            size: 24.0,
           ),
-          RawMaterialButton(
-            onPressed: () {},
-            shape: const CircleBorder(),
-            elevation: 2.0,
-            fillColor: AppColors.white,
-            padding: const EdgeInsets.all(15.0),
-            child: Icon(
-              Icons.add,
-              color: AppColors.primaryColor,
-              size: 35.0,
-            ),
-          ),
-          RawMaterialButton(
-            onPressed: () {
-              _leaveChannel();
-              // _onCallEnd(context);
+          SizedBox(width: 24.w),
+          // End call
+          _controlButton(
+            icon: Icons.call_end,
+            color: Colors.redAccent,
+            iconColor: Colors.white,
+            onPressed: () async {
+              await _leaveChannel();
               Get.back();
             },
-            shape: const CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.redAccent,
-            padding: const EdgeInsets.all(15.0),
-            child: const Icon(
-              Icons.clear,
-              color: Colors.white,
-              size: 35.0,
-            ),
+            size: 32.0,
+            padding: 18.0,
           ),
-          RawMaterialButton(
+          SizedBox(width: 24.w),
+          // Switch camera
+          _controlButton(
+            icon: Icons.switch_camera,
+            color: Colors.white,
+            iconColor: AppColors.primaryColor,
             onPressed: _onSwitchCamera,
-            shape: const CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.white,
-            padding: const EdgeInsets.all(12.0),
-            child: Icon(
-              Icons.switch_camera,
-              color: AppColors.primaryColor,
-              size: 20.0,
-            ),
-          )
+            size: 24.0,
+          ),
         ],
       ),
     );
   }
 
-  Widget remoteVideo() {
-    if (remoteUid != null) {
-      return AgoraVideoView(
-        controller: VideoViewController.remote(
-          rtcEngine: _engine,
-          canvas: VideoCanvas(uid: remoteUid),
-          connection: RtcConnection(
-              channelId: Get.find<GeneralController>().channelForCall),
-        ),
-      );
-    } else {
-      return Scaffold(
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: AppBarWidget(
-            leadingIcon: 'assets/icons/Expand_left.png',
-            leadingOnTap: () {
-              _leaveChannel();
-              Get.back();
-            },
-            titleText: LanguageConstant.videoCall.tr,
-          ),
-        ),
-        body: Center(
-          child: Text(
-            "LanguageConstant.pleaseWaitForRemoteUserToJoin.tr",
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-  }
-
-  ringingView() {
-    return Scaffold(
-      body: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              AppColors.primaryColor,
-              AppColors.customDialogSuccessColor,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * .1,
-              ),
-              Container(
-                height: 130.h,
-                width: 130.w,
-                decoration: const BoxDecoration(
-                    color: Colors.transparent,
-                    image: DecorationImage(
-                        image: AssetImage('assets/Icons/splash_logo.png'))),
-              ),
-              isJoined
-                  ? Padding(
-                      padding: EdgeInsets.fromLTRB(0, 27.h, 0, 0),
-                      child: Text(
-                        'Ringing',
-                        style: TextStyle(
-                            fontSize: 20.sp,
-                            fontFamily: AppFont.primaryFontFamily,
-                            color: Colors.white),
-                      ),
-                    )
-                  : Padding(
-                      padding: EdgeInsets.fromLTRB(0, 27.h, 0, 0),
-                      child: Text(
-                        'Calling',
-                        style: TextStyle(
-                            fontSize: 20.sp,
-                            fontFamily: AppFont.primaryFontFamily,
-                            color: Colors.white),
-                      ),
-                    ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(30.0),
-                    child: RawMaterialButton(
-                      onPressed: () {
-                        _leaveChannel();
-                        _onCallEnd(context);
-                      },
-                      shape: const CircleBorder(),
-                      elevation: 2.0,
-                      fillColor: Colors.redAccent,
-                      padding: const EdgeInsets.all(15.0),
-                      child: const Icon(
-                        Icons.clear,
-                        color: Colors.white,
-                        size: 35.0,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  receiverView() {
-    return Scaffold(
-      body: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              AppColors.primaryColor,
-              AppColors.customDialogSuccessColor,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                  child: Image.asset(
-                'assets/images/law-hammer.png',
-                width: MediaQuery.of(context).size.width * .6,
-              )),
-              Text(
-                'Call Alert',
-                style: TextStyle(
-                    fontSize: 20.sp,
-                    fontFamily: AppFont.primaryFontFamily,
-                    color: Colors.white),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              Text(
-                // '${LanguageConstant.youAreReceivingCallFrom.tr}'
-                Get.find<GeneralController>()
-                            .storageBox
-                            .read('userRole')
-                            .toString()
-                            .toUpperCase() ==
-                        'MENTEE'
-                    ? 'CONSULTANT'
-                    : 'USER',
-                style: TextStyle(
-                    fontSize: 15.sp,
-                    fontFamily: AppFont.primaryFontFamily,
-                    color: Colors.white),
-              ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(30.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              _leaveChannel();
-                              Get.back();
-                            },
-                            child: CircleAvatar(
-                              backgroundColor: Colors.red,
-                              radius: 35.r,
-                              child: const Icon(
-                                Icons.clear,
-                                color: Colors.white,
-                                size: 35.0,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              _joinChannel();
-                            },
-                            child: CircleAvatar(
-                              backgroundColor: AppColors.green,
-                              radius: 35.r,
-                              child: const Icon(
-                                Icons.call,
-                                color: Colors.white,
-                                size: 35.0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  Widget _controlButton({
+    required IconData icon,
+    required Color color,
+    required Color iconColor,
+    required VoidCallback onPressed,
+    double size = 24.0,
+    double padding = 14.0,
+  }) {
+    return RawMaterialButton(
+      onPressed: onPressed,
+      shape: const CircleBorder(),
+      elevation: 2.0,
+      fillColor: color,
+      padding: EdgeInsets.all(padding),
+      child: Icon(icon, color: iconColor, size: size),
     );
   }
 }

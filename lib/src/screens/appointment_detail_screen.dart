@@ -36,7 +36,11 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     // ── 1. Build a deterministic channel name from appointment ID.
     //        Formula: "appt_{id}" — must match student app exactly.
     final channel = "appt_${appt.id}";
-    gc.updateChannelForCall(channel);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      gc.updateChannelForCall(channel);
+    });
+
+    // gc.updateChannelForCall(channel);
 
     // ── 2. Store appointment object so makeAgoraCallRepo can send the
     //        FCM notification payload to the student with the right data.
@@ -45,6 +49,8 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       "student_id"            : appt.studentId,
       "appointment_type_name" : appt.appointmentTypeName ?? "",
       "appointment_type_id"   : appt.appointmentTypeId,
+      "teacher_name"          : gc.currentTeacherModel?.loginInfo?.firstName ?? "Teacher",
+      "teacher_image"         : gc.currentTeacherModel?.loginInfo?.image ?? "",
     };
 
     // ── 3. Fetch Agora token only when appointment is accepted (status 2).
@@ -79,9 +85,10 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               },
             ),
           ),
-          body: Padding(
-            padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 0),
-            child: Column(children: [
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 0),
+              child: Column(children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -292,9 +299,10 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                           Text(
                             // "Appointment Type",
                             Get.find<GetAllSettingsController>()
-                                .getDisplayAmount(int.parse(generalController
-                                    .selectedAppointmentHistoryForView.fee
-                                    .toString())),
+                                .getDisplayAmount(double.tryParse(generalController
+                                        .selectedAppointmentHistoryForView.fee
+                                        .toString()) ??
+                                    0),
                             style: AppTextStyles.bodyTextStyle11,
                           ),
                         ],
@@ -511,6 +519,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     )
             ]),
           ),
+        ),
         ),
       );
     });

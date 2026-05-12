@@ -3,6 +3,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -25,7 +26,7 @@ android {
         applicationId = "com.geniaes.teachers"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -69,6 +70,9 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:1.7.36")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
+    implementation("com.google.firebase:firebase-messaging:24.1.1")   // ✅ use latest
+    implementation("com.pusher:push-notifications-android:1.9.2")     // ✅ use latest
+
 
     // ✅ Kotlin DSL uses function call syntax
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")

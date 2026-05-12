@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../config/app_colors.dart';
+import '../controllers/general_controller.dart';
 import '../controllers/live_chat_controller.dart';
+import '../api_services/get_service.dart';
+import '../api_services/urls.dart';
 import '../models/get_live_chat_messages_model.dart';
 
 import '../models/get_live_service_chat_messages_model.dart';
@@ -21,7 +24,7 @@ getLiveChatMessagesRepo(
         Get.find<LiveChatController>().updateMessageList(element);
       }
       Get.find<LiveChatController>().updateGetMessagesLoader(false);
-      dynamic txData = jsonEncode(Get.find<LiveChatController>().messageList);
+      //dynamic txData = jsonEncode(Get.find<LiveChatController>().messageList);
       print(
           "${jsonEncode(Get.find<LiveChatController>().getLiveChatMessagesModel)} Get Live Chat Messages");
       print("${Get.find<LiveChatController>().messageList.length} MESSAGELIST");
@@ -95,8 +98,25 @@ sendMessagesRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
   if (responseCheck) {
     Get.find<LiveChatController>().messageController.clear();
-    if (response['Status'].toString() == 'true') {
+    final isSuccess = response['success']?.toString() == 'true' || response['Status']?.toString() == 'true';
+    if (isSuccess) {
       Get.find<LiveChatController>().updateGetMessagesLoader(false);
+      if (response['data'] != null) {
+        Get.find<LiveChatController>().updateMessageList(response['data']);
+        final ctrl = Get.find<LiveChatController>().chatScrollController;
+        if (ctrl != null && ctrl.hasClients) {
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (ctrl.hasClients) {
+              ctrl.animateTo(ctrl.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut);
+            }
+          });
+        }
+      } else {
+        final appointmentId = Get.find<GeneralController>().selectedAppointmentHistoryForView.id;
+        getMethod(context, "$getMessagesUrl$appointmentId", null, true, getLiveChatMessagesRepo);
+      }
     } else {
       Get.find<LiveChatController>().updateGetMessagesLoader(false);
     }
@@ -109,8 +129,25 @@ sendServiceMessagesRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
   if (responseCheck) {
     Get.find<LiveChatController>().serviceMessageController.clear();
-    if (response['Status'].toString() == 'true') {
+    final isSuccess = response['success']?.toString() == 'true' || response['Status']?.toString() == 'true';
+    if (isSuccess) {
       Get.find<LiveChatController>().updateGetServiceMessagesLoader(false);
+      if (response['data'] != null) {
+        Get.find<LiveChatController>().updateServiceMessageList(response['data']);
+        final ctrl = Get.find<LiveChatController>().serviceChatScrollController;
+        if (ctrl != null && ctrl.hasClients) {
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (ctrl.hasClients) {
+              ctrl.animateTo(ctrl.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut);
+            }
+          });
+        }
+      } else {
+        final serviceId = Get.find<GeneralController>().selectedBookedServiceForView.id;
+        getMethod(context, "$getServiceMessagesUrl$serviceId", null, true, getServiceChatMessagesRepo);
+      }
     } else {
       Get.find<LiveChatController>().updateGetServiceMessagesLoader(false);
     }

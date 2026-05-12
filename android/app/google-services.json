@@ -12,7 +12,28 @@
           "package_name": "com.geniaes.student"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "979921148562-k347dg3g126ol8e3sviadda5baqk8384.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.geniaes.student",
+            "certificate_hash": "8f0d64cec8e0ff4b568d6b994372268bd56eddb3"
+          }
+        },
+        {
+          "client_id": "979921148562-p7fqhl206kb48rae62mq2q6g82en8ob9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.geniaes.student",
+            "certificate_hash": "bab70be359c0f55d2cb7fbdf9ae5506f4438d156"
+          }
+        },
+        {
+          "client_id": "979921148562-mt3m78rck7tic1m3jtamvls4ie6lnbbk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDEUbVsbeAln7yAMWIldexADKWgWGIEO5o"
@@ -20,7 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "979921148562-mt3m78rck7tic1m3jtamvls4ie6lnbbk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "979921148562-5h1f269evclov2n8tkj0962po179s5uu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.teacherhubForTutors"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +64,28 @@
           "package_name": "com.geniaes.teachers"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "979921148562-7uj8t69hnfsrlgrbpegm7lej4qb31cea.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.geniaes.teachers",
+            "certificate_hash": "bab70be359c0f55d2cb7fbdf9ae5506f4438d156"
+          }
+        },
+        {
+          "client_id": "979921148562-bjdb0rst5bfk0nfk5th1n8bcinbjiane.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.geniaes.teachers",
+            "certificate_hash": "4f6a6db023a86fbf452be3b071bfe053de34af74"
+          }
+        },
+        {
+          "client_id": "979921148562-mt3m78rck7tic1m3jtamvls4ie6lnbbk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDEUbVsbeAln7yAMWIldexADKWgWGIEO5o"
@@ -39,7 +93,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "979921148562-mt3m78rck7tic1m3jtamvls4ie6lnbbk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "979921148562-5h1f269evclov2n8tkj0962po179s5uu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.teacherhubForTutors"
+              }
+            }
+          ]
         }
       }
     }

@@ -77,21 +77,41 @@ class _LiveServiceChatScreenState extends State<LiveServiceChatScreen> {
       final myChannel = pusherChannels.subscribe(
           channelName: _channelName,
           onEvent: (event) {
-            log("Got channel event: $event");
-            PusherEvent eventTest = event;
+            log("Got channel event [${event.eventName}]: ${event.data}");
+            
+            // Ignore internal Pusher events
+            if (event.eventName.startsWith('pusher:')) return;
+            
+            if (event.data == null || event.data.toString().isEmpty) return;
 
             setState(() {
-              responseData = eventTest.data.toString();
+              responseData = event.data.toString();
             });
 
-            eventResponseMap = jsonDecode(responseData);
+            try {
+              eventResponseMap = jsonDecode(responseData) as Map<String, dynamic>;
+              dynamic message = eventResponseMap["message"] ?? eventResponseMap;
 
-            Get.find<LiveChatController>()
-                .updateMessageList(eventResponseMap["message"]);
+              if (message != null && message is Map) {
+                Get.find<LiveChatController>()
+                    .updateServiceMessageList(message);
+                
+                final ctrl = Get.find<LiveChatController>().serviceChatScrollController;
+                if (ctrl != null && ctrl.hasClients) {
+                  Future.delayed(const Duration(milliseconds: 100), () {
+                    if (ctrl.hasClients) {
+                      ctrl.animateTo(ctrl.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut);
+                    }
+                  });
+                }
+              }
+            } catch (e) {
+              log("LiveServiceChat: decode error - $e");
+            }
 
-            log("Got channel event messageData11: ${Get.find<LiveChatController>().serviceMessageList} 888");
-
-            log("${Get.find<LiveChatController>().getLiveServiceChatMessagesModel.data} 555");
+            log("Got channel event messageData11: ${Get.find<LiveChatController>().serviceMessageList.length} items");
           });
       pusherChannels.connect();
     } catch (e) {

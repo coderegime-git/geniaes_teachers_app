@@ -8,6 +8,7 @@ import '../config/app_colors.dart';
 import '../config/app_text_styles.dart';
 import '../controllers/general_controller.dart';
 import '../api_services/AgoraCallService.dart';
+import 'agora_call/repo.dart';
 
 /// AudioCallScreen — Teacher side
 /// Uses dynamic Agora credentials from GetAllSettingsController.
@@ -41,6 +42,9 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
         gc.selectedAppointmentHistoryForView.studentName ?? "Student";
     _startTimer();
     _initAgora();
+    
+    // Notify student via push notification
+    sendCallNotificationToStudent(context);
   }
 
   void _startTimer() {
@@ -93,9 +97,10 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
       ),
     );
 
+    final gc = Get.find<GeneralController>();
     await AgoraCallService.joinAudioChannel(
       channelName: _channelName,
-      token: null, // Replace with token from backend for production
+      token: gc.tokenForCall,
     );
 
     await AgoraCallService.toggleSpeaker(_isSpeakerOn);

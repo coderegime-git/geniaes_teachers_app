@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -25,63 +26,89 @@ class PusherBeamsController extends GetxController {
   }
 
   getSecure() async {
-    final BeamsAuthProvider provider = BeamsAuthProvider()
-      ..authUrl = '${apiBaseUrl}pusher/beams-auth'
-      ..headers = {'Content-Type': 'application/json'}
-      ..queryParams = {
-        'user_id':
-            Get.find<GeneralController>().storageBox.read('userID').toString()
-      }
-      ..credentials = 'omit';
-    await PusherBeams.instance.setDeviceInterests([
-      Get.find<GeneralController>().storageBox.read('userID').toString(),
-    ]);
-    await PusherBeams.instance.setUserId(
-      Get.find<GeneralController>().storageBox.read('userID').toString(),
-      provider,
-      (error) => {
-        if (error != null)
-          {
-            print("$error ERROR PUSHER"),
-          }
-        else
-          {
-            print("$error PUSHER2"),
-          }
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
+    try {
+      final userId =
+      Get.find<GeneralController>().storageBox.read('userID').toString();
+      print("PUSHER USER ID: $userId");
+      log("PUSHER USER ID: $userId");
+      log("PUSHER AUTH URL: ${apiBaseUrl}pusher/beams-auth");
 
-        // Success! Do something...
-      },
-    );
+      final BeamsAuthProvider provider = BeamsAuthProvider()
+        ..authUrl = '${apiBaseUrl}pusher/beams-auth'
+        ..headers = {'Content-Type': 'application/json'}
+        ..queryParams = {
+          'user_id':
+              Get.find<GeneralController>().storageBox.read('userID').toString()
+        }
+        ..credentials = 'omit';
+      await PusherBeams.instance.setDeviceInterests([
+        Get.find<GeneralController>().storageBox.read('userID').toString(),
+      ]);
+      await PusherBeams.instance.setUserId(
+        Get.find<GeneralController>().storageBox.read('userID').toString(),
+        provider,
+        (error) => {
+          if (error != null)
+            {
+              print("$error ERROR PUSHER"),
+            }
+          else
+            {
+              print("$error PUSHER2"),
+            }
+
+          // Success! Do something...
+        },
+      );
+    } catch (e) {
+      log("PusherBeams getSecure error: $e");
+    }
   }
 
   initPusherBeams() async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
     log("INITIALIZE PUSHER");
     log("${Get.find<GeneralController>().storageBox.hasData('userID')} USERIDTRUE");
     log("${Get.find<GeneralController>().storageBox.read('userID')} USERIDREAD");
+    
+    try {
+      await PusherBeams.instance.start('9466bd1b-2413-4135-badc-36ae30931bac');
+      await PusherBeams.instance.addDeviceInterest("hello");
+    } catch (e) {
+      log("PusherBeams start error: $e");
+    }
+
     // Let's see our current interests
     await getSecure();
 
-    log(await "${PusherBeams.instance.getDeviceInterests()} DEVICEINTEREST");
+    try {
+      log(await "${PusherBeams.instance.getDeviceInterests()} DEVICEINTEREST");
 
-    // This is not intented to use in web
-    if (!kIsWeb) {
       await PusherBeams.instance
           .onInterestChanges((interests) => {print('Interests: $interests')});
 
       await PusherBeams.instance
           .onMessageReceivedInTheForeground(_onMessageReceivedInTheForeground);
+    } catch (e) {
+      log("PusherBeams init error: $e");
     }
     await _checkForInitialMessage();
   }
 
   Future<void> _checkForInitialMessage() async {
-    final initialMessage = await PusherBeams.instance.getInitialMessage();
-    if (initialMessage != null) {
-      log(initialMessage.toString());
-      // _showAlert(
-      //   'Initial Message Is:',
-      //   initialMessage.toString(),
-      // );
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
+    try {
+      final initialMessage = await PusherBeams.instance.getInitialMessage();
+      if (initialMessage != null) {
+        log(initialMessage.toString());
+        // _showAlert(
+        //   'Initial Message Is:',
+        //   initialMessage.toString(),
+        // );
+      }
+    } catch (e) {
+      log("PusherBeams getInitialMessage error: $e");
     }
   }
 
@@ -135,7 +162,12 @@ class PusherBeamsController extends GetxController {
   }
 
   clearAllStatePusherBeams() async {
-    await PusherBeams.instance.clearAllState();
-    log("Pusher Beams States are cleared");
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
+    try {
+      await PusherBeams.instance.clearAllState();
+      log("Pusher Beams States are cleared");
+    } catch (e) {
+      log("PusherBeams clearAllState error: $e");
+    }
   }
 }

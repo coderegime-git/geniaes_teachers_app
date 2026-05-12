@@ -63,40 +63,74 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
     super.initState();
   }
 
+  /// Safely get the profile image widget, handling null loginInfo
+  Widget _buildProfileImage() {
+    final generalController = Get.find<GeneralController>();
+
+    // Not logged in
+    if (generalController.storageBox.read('authToken') == null) {
+      return Image(
+        image: const AssetImage('assets/icons/user-avatar.png'),
+        height: 100.h,
+        fit: BoxFit.contain,
+      );
+    }
+
+    // Logged in but loginInfo or image is null
+    final loginInfo = generalController.currentTeacherModel?.loginInfo;
+    final image = loginInfo?.image;
+
+    if (image != null && image.toString().isNotEmpty) {
+      return Image(
+        image: NetworkImage('$mediaUrl$image'),
+        height: 100.h,
+        errorBuilder: (context, error, stackTrace) => Image(
+          image: const AssetImage('assets/icons/user-avatar.png'),
+          height: 100.h,
+        ),
+      );
+    }
+
+    return Image(
+      image: const AssetImage('assets/icons/user-avatar.png'),
+      height: 100.h,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> widgetScreens = <Widget>[
       Get.find<GeneralController>().storageBox.read('authToken') != null
           ? const AppointmentHistoryScreen()
           : const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: Text(
-                  "Please Signin to see Appointment History",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodyTextStyle1,
-                ),
-              ),
-            ),
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Text(
+            "Please Signin to see Appointment History",
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyTextStyle1,
+          ),
+        ),
+      ),
       HomeScreen(
         totalAppointmentsOnTap:
-            Get.find<GeneralController>().storageBox.read('authToken') != null
-                ? () {
-                    setState(
-                        () => Get.find<GeneralController>().bottomNavIndex = 0);
-                  }
-                : () {
-                    Get.find<GeneralController>().showMessageDialog(context);
-                  },
+        Get.find<GeneralController>().storageBox.read('authToken') != null
+            ? () {
+          setState(
+                  () => Get.find<GeneralController>().bottomNavIndex = 0);
+        }
+            : () {
+          Get.find<GeneralController>().showMessageDialog(context);
+        },
         userWaitingOnTap:
-            Get.find<GeneralController>().storageBox.read('authToken') != null
-                ? () {
-                    setState(
-                        () => Get.find<GeneralController>().bottomNavIndex = 0);
-                  }
-                : () {
-                    Get.find<GeneralController>().showMessageDialog(context);
-                  },
+        Get.find<GeneralController>().storageBox.read('authToken') != null
+            ? () {
+          setState(
+                  () => Get.find<GeneralController>().bottomNavIndex = 0);
+        }
+            : () {
+          Get.find<GeneralController>().showMessageDialog(context);
+        },
         pendingAppointmentsOnTap: () {
           setState(() => Get.find<GeneralController>().bottomNavIndex = 0);
         },
@@ -104,15 +138,15 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
       Get.find<GeneralController>().storageBox.read('authToken') != null
           ? const WalletScreen()
           : const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: Text(
-                  "Please Signin to see Wallet",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodyTextStyle1,
-                ),
-              ),
-            ),
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Text(
+            "Please Signin to see Wallet",
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyTextStyle1,
+          ),
+        ),
+      ),
     ];
     return GetBuilder<LoggedInUserController>(builder: (loggedInUserLogic) {
       return WillPopScope(
@@ -138,50 +172,23 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
               ),
               child: Container(
                 decoration: const BoxDecoration(
-                    gradient: AppColors.gradientOne), //BoxDecoration
+                    gradient: AppColors.gradientOne),
                 child: ListView(
                   children: [
                     DrawerHeader(
                       padding: EdgeInsets.fromLTRB(10.w, 0, 10.w, 0),
                       decoration: BoxDecoration(
                           border: Border(
-                        bottom: Divider.createBorderSide(context,
-                            color: AppColors.white, width: 0.0),
-                      )),
+                            bottom: Divider.createBorderSide(context,
+                                color: AppColors.white, width: 0.0),
+                          )),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          // FIXED: use _buildProfileImage() to safely handle null loginInfo
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            child: Get.find<GeneralController>()
-                                        .storageBox
-                                        .read('authToken') !=
-                                    null
-                                ? Get.find<GeneralController>()
-                                            .currentTeacherModel!
-                                            .loginInfo!
-                                            .image !=
-                                        null
-                                    ? Image(
-                                        image: NetworkImage(
-                                            '$mediaUrl${Get.find<GeneralController>().currentTeacherModel!.loginInfo!.image}'),
-                                        height: 100.h,
-                                        errorBuilder: (context, error, stackTrace) => Image(
-                                            image: const AssetImage('assets/icons/user-avatar.png'),
-                                            height: 100.h,
-                                        ),
-                                      )
-                                    : Image(
-                                        image: const AssetImage(
-                                            'assets/icons/user-avatar.png'),
-                                        height: 100.h,
-                                      )
-                                : Image(
-                                    image: const AssetImage(
-                                        'assets/icons/user-avatar.png'),
-                                    height: 100.h,
-                                    fit: BoxFit.contain,
-                                  ),
+                            child: _buildProfileImage(),
                           ),
                           Flexible(
                             child: Column(
@@ -189,32 +196,31 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Get.find<GeneralController>()
-                                            .storageBox
-                                            .read('authToken') !=
-                                        null
+                                    .storageBox
+                                    .read('authToken') !=
+                                    null
                                     ? Text(
-                                        "${Get.find<GeneralController>().currentTeacherModel!.name} ",
-                                        style: AppTextStyles.bodyTextStyle5,
-                                      )
+                                  "${Get.find<GeneralController>().currentTeacherModel?.name ?? ''} ",
+                                  style: AppTextStyles.bodyTextStyle5,
+                                )
                                     : GestureDetector(
-                                        onTap: () {
-                                          Get.toNamed(PageRoutes.signinScreen);
-                                        },
-                                        child: Text(
-                                          LanguageConstant.signIn.tr,
-                                          style: AppTextStyles.bodyTextStyle5,
-                                        ),
-                                      ),
+                                  onTap: () {
+                                    Get.toNamed(PageRoutes.signinScreen);
+                                  },
+                                  child: Text(
+                                    LanguageConstant.signIn.tr,
+                                    style: AppTextStyles.bodyTextStyle5,
+                                  ),
+                                ),
                                 SizedBox(
                                   height: 2.h,
                                 ),
                                 Text(
                                   Get.find<GeneralController>()
-                                              .storageBox
-                                              .read('authToken') !=
-                                          null
-                                      // ? "${loggedInUserLogic.loggedInUserModel.data!.email}"
-                                      ? "${Get.find<GeneralController>().currentTeacherModel!.email} "
+                                      .storageBox
+                                      .read('authToken') !=
+                                      null
+                                      ? "${Get.find<GeneralController>().currentTeacherModel?.email ?? ''} "
                                       : "",
                                   style: AppTextStyles.subHeadingTextStyle3,
                                 ),
@@ -233,70 +239,30 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                       child: Column(
                         children: [
                           Get.find<GeneralController>()
-                                      .storageBox
-                                      .read('authToken') !=
-                                  null
+                              .storageBox
+                              .read('authToken') !=
+                              null
                               ? ListTile(
-                                  isThreeLine: false,
-                                  dense: true,
-                                  visualDensity: const VisualDensity(
-                                      vertical: -1, horizontal: -3),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 0),
-                                  leading: const ImageIcon(
-                                    AssetImage("assets/icons/User.png"),
-                                    color: AppColors.white,
-                                  ),
-                                  title: Text(
-                                    LanguageConstant.profile.tr,
-                                    style: AppTextStyles.subHeadingTextStyle2,
-                                  ),
-                                  onTap: () {
-                                    Get.toNamed(
-                                        PageRoutes.teacherProfileScreen);
-                                  },
-                                )
+                            isThreeLine: false,
+                            dense: true,
+                            visualDensity: const VisualDensity(
+                                vertical: -1, horizontal: -3),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 0),
+                            leading: const ImageIcon(
+                              AssetImage("assets/icons/User.png"),
+                              color: AppColors.white,
+                            ),
+                            title: Text(
+                              LanguageConstant.profile.tr,
+                              style: AppTextStyles.subHeadingTextStyle2,
+                            ),
+                            onTap: () {
+                              Get.toNamed(
+                                  PageRoutes.teacherProfileScreen);
+                            },
+                          )
                               : const SizedBox(),
-                          // ListTile(
-                          //   isThreeLine: false,
-                          //   dense: true,
-                          //   visualDensity:
-                          //       const VisualDensity(vertical: -1, horizontal: -3),
-                          //   contentPadding: const EdgeInsets.symmetric(
-                          //       horizontal: 12, vertical: 0),
-                          //   leading: const ImageIcon(
-                          //     AssetImage("assets/icons/Bell_pin.png"),
-                          //     color: AppColors.white,
-                          //   ),
-                          //   title: const Text(
-                          //     'Notifications',
-                          //     style: AppTextStyles.subHeadingTextStyle2,
-                          //   ),
-                          //   onTap: () {
-                          //     Get.toNamed(PageRoutes.notificationsScreen);
-                          //   },
-                          // ),
-                          // ListTile(
-                          //   isThreeLine: false,
-                          //   dense: true,
-                          //   visualDensity:
-                          //       const VisualDensity(vertical: -1, horizontal: -3),
-                          //   contentPadding: const EdgeInsets.symmetric(
-                          //       horizontal: 12, vertical: 0),
-                          //   leading: const ImageIcon(
-                          //     AssetImage("assets/icons/Wallet_alt.png"),
-                          //     color: AppColors.white,
-                          //   ),
-                          //   title: const Text(
-                          //     'Wallet',
-                          //     style: AppTextStyles.subHeadingTextStyle2,
-                          //   ),
-                          //   onTap: () {
-                          //     setState(() => currentIndex = 2);
-                          //     Get.back();
-                          //     // Get.toNamed(PageRoutes.walletScreen);
-                          //   },
-                          // ),
                           ListTile(
                               isThreeLine: false,
                               dense: true,
@@ -313,19 +279,19 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                                 style: AppTextStyles.subHeadingTextStyle2,
                               ),
                               onTap: Get.find<GeneralController>()
-                                          .storageBox
-                                          .read('authToken') !=
-                                      null
+                                  .storageBox
+                                  .read('authToken') !=
+                                  null
                                   ? () {
-                                      setState(() =>
-                                          Get.find<GeneralController>()
-                                              .bottomNavIndex = 0);
-                                      Get.back();
-                                    }
+                                setState(() =>
+                                Get.find<GeneralController>()
+                                    .bottomNavIndex = 0);
+                                Get.back();
+                              }
                                   : () {
-                                      Get.find<GeneralController>()
-                                          .showMessageDialog(context);
-                                    }),
+                                Get.find<GeneralController>()
+                                    .showMessageDialog(context);
+                              }),
                           ListTile(
                             isThreeLine: false,
                             dense: true,
@@ -342,24 +308,18 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                               style: AppTextStyles.subHeadingTextStyle2,
                             ),
                             onTap: Get.find<GeneralController>()
-                                        .storageBox
-                                        .read('authToken') !=
-                                    null
+                                .storageBox
+                                .read('authToken') !=
+                                null
                                 ? () {
-                                    Get.toNamed(
-                                        PageRoutes.bookedServicesScreen);
-                                  }
+                              Get.toNamed(
+                                  PageRoutes.bookedServicesScreen);
+                            }
                                 : () {
-                                    Get.find<GeneralController>()
-                                        .showMessageDialog(context);
-                                  },
+                              Get.find<GeneralController>()
+                                  .showMessageDialog(context);
+                            },
                           ),
-                          // Get.find<GetAllSettingsController>()
-                          //             .getAllSettingsModel
-                          //             .data!
-                          //             .commissionType! ==
-                          //         'subscription_base'
-                          //     ?
                           ListTile(
                               isThreeLine: false,
                               dense: true,
@@ -376,20 +336,18 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                                 style: AppTextStyles.subHeadingTextStyle2,
                               ),
                               onTap: Get.find<GeneralController>()
-                                          .storageBox
-                                          .read('authToken') !=
-                                      null
+                                  .storageBox
+                                  .read('authToken') !=
+                                  null
                                   ? () {
-                                      // Get.toNamed(PageRoutes.pricingPlanScreen);
-                                      Get.to(const WebViewScreen(
-                                        fromScreen: "Appointment Screen",
-                                      ));
-                                    }
+                                Get.to(const WebViewScreen(
+                                  fromScreen: "Appointment Screen",
+                                ));
+                              }
                                   : () {
-                                      Get.find<GeneralController>()
-                                          .showMessageDialog(context);
-                                    }),
-                          // : const SizedBox(),
+                                Get.find<GeneralController>()
+                                    .showMessageDialog(context);
+                              }),
                           ListTile(
                             isThreeLine: false,
                             dense: true,
@@ -487,32 +445,32 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                           ),
 
                           Get.find<GeneralController>()
-                                      .storageBox
-                                      .read('authToken') !=
-                                  null
+                              .storageBox
+                              .read('authToken') !=
+                              null
                               ? ListTile(
-                                  isThreeLine: false,
-                                  dense: true,
-                                  visualDensity: const VisualDensity(
-                                      vertical: -1, horizontal: -3),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 0),
-                                  leading: const ImageIcon(
-                                    AssetImage(
-                                        "assets/icons/Sign_out_circle.png"),
-                                    color: AppColors.white,
-                                  ),
-                                  title: Text(
-                                    LanguageConstant.logOut.tr,
-                                    style: AppTextStyles.subHeadingTextStyle2,
-                                  ),
-                                  onTap: () {
-                                    signOutUserLogic
-                                        .updateSignOutLoaderController(true);
-                                    getMethod(context, signOutURL, null, true,
-                                        signOutUserRepo);
-                                  },
-                                )
+                            isThreeLine: false,
+                            dense: true,
+                            visualDensity: const VisualDensity(
+                                vertical: -1, horizontal: -3),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 0),
+                            leading: const ImageIcon(
+                              AssetImage(
+                                  "assets/icons/Sign_out_circle.png"),
+                              color: AppColors.white,
+                            ),
+                            title: Text(
+                              LanguageConstant.logOut.tr,
+                              style: AppTextStyles.subHeadingTextStyle2,
+                            ),
+                            onTap: () {
+                              signOutUserLogic
+                                  .updateSignOutLoaderController(true);
+                              getMethod(context, signOutURL, null, true,
+                                  signOutUserRepo);
+                            },
+                          )
                               : const SizedBox(),
                         ],
                       ),
@@ -551,43 +509,20 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                 ),
               ],
               selectedLabelStyle: AppTextStyles.bodyTextStyle4,
-
               unselectedLabelStyle: AppTextStyles.bodyTextStyle5,
-              // currentIndex: _selectedIndex,
-              // selectedItemColor: kMainWhite,
-              // unselectedItemColor: Colors.white70,
-              // onTap: _onItemTapped, onItemSelected: (int value) {  },
               behaviour: SnakeBarBehaviour.pinned,
               snakeShape: SnakeShape.indicator,
-              // shape: RoundedRectangleBorder(
-              //   borderRadius: BorderRadius.only(
-              //       topLeft: Radius.circular(20),
-              //       topRight: Radius.circular(20)),
-              // ),
               padding: EdgeInsets.zero,
-
-              ///configuration for SnakeNavigationBar.color
               snakeViewGradient: AppColors.gradientFour,
               selectedItemGradient: SnakeShape.rectangle == SnakeShape.indicator
                   ? AppColors.gradientOne
                   : null,
               unselectedItemGradient: AppColors.gradientFour,
-
-              ///configuration for SnakeNavigationBar.gradient
-              //snakeViewGradient: selectedGradient,
-              //selectedItemGradient: snakeShape == SnakeShape.indicator ? selectedGradient : null,
-              //unselectedItemGradient: unselectedGradient,
-
               showUnselectedLabels: true,
               showSelectedLabels: true,
               currentIndex: Get.find<GeneralController>().bottomNavIndex,
-              // selectedIndex: currentIndex,
-              // showElevation: true,
-              // itemCornerRadius: 24, curve: Curves.easeIn,
-              // onItemSelected: (index) =>
-              //     setState(() => currentIndex = index),
               onTap: (index) => setState(
-                  () => Get.find<GeneralController>().bottomNavIndex = index),
+                      () => Get.find<GeneralController>().bottomNavIndex = index),
             ),
           ),
         ),

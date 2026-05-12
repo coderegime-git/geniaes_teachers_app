@@ -5,37 +5,20 @@ class GetAllSettingsController extends GetxController {
   GetAllSettingsModel getAllSettingsModel = GetAllSettingsModel();
 
   getDisplayAmount(amount) {
-    if (Get.find<GetAllSettingsController>()
-            .getAllSettingsModel
-            .data!
-            .defaultCurrency !=
-        null) {
-      if (Get.find<GetAllSettingsController>()
-              .getAllSettingsModel
-              .data!
-              .defaultCurrency!
-              .direction ==
-          "ltr") {
-        return '${Get.find<GetAllSettingsController>().getAllSettingsModel.data!.defaultCurrency!.symbol}${amount.toStringAsFixed(Get.find<GetAllSettingsController>().getAllSettingsModel.data!.defaultCurrency!.decimalPlaces!.toInt())}';
-      } else if (Get.find<GetAllSettingsController>()
-              .getAllSettingsModel
-              .data!
-              .defaultCurrency!
-              .direction ==
-          "rtl") {
-        return '${amount.toStringAsFixed(Get.find<GetAllSettingsController>().getAllSettingsModel.data!.defaultCurrency!.decimalPlaces!.toInt())}${Get.find<GetAllSettingsController>().getAllSettingsModel.data!.defaultCurrency!.symbol}';
+    if (getAllSettingsModel.data?.defaultCurrency != null) {
+      var currency = getAllSettingsModel.data!.defaultCurrency!;
+      var decimalPlaces = currency.decimalPlaces?.toInt() ?? 0;
+      if (currency.direction == "ltr") {
+        return '${currency.symbol}${amount.toStringAsFixed(decimalPlaces)}';
+      } else if (currency.direction == "rtl") {
+        return '${amount.toStringAsFixed(decimalPlaces)}${currency.symbol}';
       }
-    } else {
-      return amount;
     }
+    return amount.toString();
   }
 
   getDefaultCurrencySymbol() {
-    var defaultCurrency = Get.find<GetAllSettingsController>()
-        .getAllSettingsModel
-        .data!
-        .defaultCurrency;
-    return defaultCurrency?.symbol ?? '';
+    return getAllSettingsModel.data?.defaultCurrency?.symbol ?? '';
   }
 
   bool getAllSettingsLoader = false;
