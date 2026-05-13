@@ -406,13 +406,32 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                       style: AppTextStyles.headingTextStyle5,
                     ),
                     SizedBox(height: 6.h),
-                    const Text(
-                      "",
-                      // generalController
-                      //     .selectedAppointmentHistoryForView.attachmentUrl!
-                      //     .toString(),
-                      style: AppTextStyles.bodyTextStyle7,
-                    ),
+                    if (generalController.selectedAppointmentHistoryForView
+                                .attachmentUrl !=
+                            null &&
+                        generalController.selectedAppointmentHistoryForView
+                            .attachmentUrl!.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 8.h),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            "$mediaUrl${generalController.selectedAppointmentHistoryForView.attachmentUrl!}",
+                            width: double.infinity,
+                            fit: BoxFit.fitWidth,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Text(
+                              "Could not load image",
+                              style: AppTextStyles.bodyTextStyle10,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        "No attachment",
+                        style: AppTextStyles.bodyTextStyle7,
+                      ),
                   ],
                 ),
               ),
