@@ -159,6 +159,8 @@ String createRatingUrl = '${apiBaseUrl}create-rating';
 String getExistRatingUrl = '${apiBaseUrl}rating-exist-appointment';
 String addAppointmentRatingURL = "${apiBaseUrl}students/add_appointment_rating";
 
+String getFilterAppointmentLogDetailURL = '${apiBaseUrl}teachers/get_filter_appointment_log_detail/';
+
 ///---agora
 String getAgoraTokenUrl = '${apiBaseUrl}teachers/api_generate_agora_token';
 
