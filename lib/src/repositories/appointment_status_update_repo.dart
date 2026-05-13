@@ -34,12 +34,9 @@ appointmentStatusUpdateRepo(
               }
             });
 
-            // Fallback for status name if still null
-            if (oldData["appointment_status_name"] == null ||
-                oldData["appointment_status_name"] == "") {
-              if (oldData["appointment_status_code"] == 5) {
-                oldData["appointment_status_name"] = "Completed";
-              }
+            // Overwrite status name if it is completed
+            if (oldData["appointment_status_code"] == 5) {
+              oldData["appointment_status_name"] = "Completed";
             }
 
             generalController.selectedAppointmentHistoryForView =
