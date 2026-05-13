@@ -156,6 +156,7 @@ class LanguageConstant {
   static const String scheduleSlots = 'schedule_slots';
   static const String socialInfo = 'social_info';
   static const String basicInformation = 'basic_information';
+  static const String courses = 'courses';
   static const String education = 'education';
   static const String certificate = 'certificate';
   static const String experience = 'experience';
@@ -190,6 +191,7 @@ class LanguageConstant {
   static const String addNewTeacherPodcast = 'add_new_teacher_podcast';
   static const String podcastFileNameHere = 'podcast_file_name_here';
   static const String selectFileType = 'select_file_type';
+  static const String selectTagType = 'Select tag type';
   static const String selectLinkType = 'select_link_type';
   static const String audio = 'audio';
   static const String video = 'video';
@@ -276,4 +278,7 @@ class LanguageConstant {
   static const String appointmentDetail = 'appointment_detail';
   static const String type = 'type';
   static const String deleteAccount = 'delete_account';
+  static const String rateUs = 'rate_us';
+  static const String yourFeedback = 'your_feedback';
+  static const String comment = 'comment';
 }

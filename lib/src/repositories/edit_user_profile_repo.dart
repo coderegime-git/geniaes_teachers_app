@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:dio/dio.dart' as dio_instance;
+import '../api_services/delete_service.dart';
 import '../api_services/get_service.dart';
 import '../api_services/header.dart';
 import '../api_services/urls.dart';
@@ -21,7 +22,13 @@ import '../models/logged_in_teacher_model.dart';
 
 import '../widgets/custom_dialog.dart';
 
+import 'get_teacher_archives_repo.dart';
+import 'get_teacher_blogs_repo.dart';
+import 'get_teacher_events_repo.dart';
+import 'get_teacher_podcasts_repo.dart';
+import 'get_teacher_broadcasts_repo.dart';
 import 'logged_in_user_repo.dart';
+import 'get_teacher_service_repo.dart';
 
 editUserProfileDataRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
@@ -220,7 +227,7 @@ editUserProfileImageRepo(
             );
           });
     }
-  } on dio_instance.DioError catch (e) {
+  } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
     Get.find<GeneralController>().updateFormLoaderController(false);
     showDialog(
@@ -528,7 +535,7 @@ addUserProfileCertificateDataRepo(
             );
           });
     }
-  } on dio_instance.DioError catch (e) {
+  } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
     Get.find<GeneralController>().updateFormLoaderController(false);
     showDialog(
@@ -693,7 +700,7 @@ addUserProfileExperienceDataRepo(
             );
           });
     }
-  } on dio_instance.DioError catch (e) {
+  } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
     Get.find<GeneralController>().updateFormLoaderController(false);
     showDialog(
@@ -861,7 +868,7 @@ addUserProfileEducationDataRepo(
             );
           });
     }
-  } on dio_instance.DioError catch (e) {
+  } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
     Get.find<GeneralController>().updateFormLoaderController(false);
     showDialog(
@@ -899,7 +906,7 @@ deleteUserProfilePodcastDataRepo(
               text: "Ok",
               functionCall: () {
                 Navigator.pop(context);
-                Get.back();
+                getMethod(context, getUserProfilePodcastsURL, null, true, getTeacherPodcastsRepo);
               },
               img: 'assets/icons/dialog_success.png',
             );
@@ -971,52 +978,30 @@ addUserProfilePodcastDataRepo(
       addEditUserProfilePodcastURL,
       data: formData,
       options: Options(
-        followRedirects: false, // default is true, change to false
-        maxRedirects: 0, // set to 0
-        // contentType: ContentType.parse("application/x-www-form-urlencoded"),
+        followRedirects: false,
+        maxRedirects: 0,
       ),
     );
     log("${response} Response");
 
-    if (response.statusCode == 200) {
-      if (response.data['success'].toString() == 'true') {
-        Get.find<EditProfileController>().teacherProfileEducationModel =
-            TeacherProfileEducationModel.fromJson(response.data);
-        showDialog(
-            context: Get.context!,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return CustomDialogBox(
-                title: 'Succes',
-                titleColor: AppColors.customDialogSuccessColor,
-                descriptions: 'Profile Updated Successfully',
-                text: 'Ok',
-                functionCall: () {
-                  Navigator.pop(context);
-                  Get.back();
-                },
-                img: 'assets/icons/dialog_success.png',
-              );
-            });
-        Get.find<GeneralController>().updateFormLoaderController(false);
-      } else {
-        showDialog(
-            context: Get.context!,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return CustomDialogBox(
-                title: 'Failed',
-                titleColor: AppColors.customDialogErrorColor,
-                descriptions: 'Inside Repo Popup 1',
-                text: 'Ok',
-                functionCall: () {
-                  Navigator.pop(context);
-                },
-                img: 'assets/icons/dialog_error.png',
-              );
-            });
-        Get.find<GeneralController>().updateFormLoaderController(false);
-      }
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return CustomDialogBox(
+              title: 'Success!',
+              titleColor: AppColors.customDialogSuccessColor,
+              descriptions: 'Media added successfully',
+              text: 'Ok',
+              functionCall: () {
+                Navigator.pop(context);
+                getMethod(Get.context!, getUserProfilePodcastsURL, null, true, getTeacherPodcastsRepo);
+              },
+              img: 'assets/icons/dialog_success.png',
+            );
+          });
+      Get.find<GeneralController>().updateFormLoaderController(false);
     } else {
       Get.find<GeneralController>().updateFormLoaderController(false);
       showDialog(
@@ -1026,7 +1011,7 @@ addUserProfilePodcastDataRepo(
             return CustomDialogBox(
               title: 'Failed',
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: 'Inside Repo Popup 2',
+              descriptions: 'Failed to add media. Please try again.',
               text: 'Ok',
               functionCall: () {
                 Navigator.pop(context);
@@ -1035,7 +1020,7 @@ addUserProfilePodcastDataRepo(
             );
           });
     }
-  } on dio_instance.DioError catch (e) {
+  } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
     Get.find<GeneralController>().updateFormLoaderController(false);
     showDialog(
@@ -1077,7 +1062,7 @@ addUserProfileEventDataRepo(
     'end_date': endDate,
     'address_line_1': addressLine1,
     'address_line_2': addressLine2,
-    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
+    if (file1 != null) 'image': await dio_instance.MultipartFile.fromFile(file1.path),
     'is_active': 1,
   });
   dio_instance.Dio dio = dio_instance.Dio();
@@ -1085,14 +1070,47 @@ addUserProfileEventDataRepo(
   setContentHeader(dio);
   setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
   setCustomHeader(dio, 'logged-in-as', 'teacher');
-  setCustomHeader(dio, 'Content-Type', 'application/json');
   
   try {
-    await dio.post(addEditUserProfileEventURL, data: formData);
+    final response = await dio.post(addEditUserProfileEventURL, data: formData);
     Get.find<GeneralController>().updateFormLoaderController(false);
-  } catch (e) {
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return CustomDialogBox(
+              title: 'Success!',
+              titleColor: AppColors.customDialogSuccessColor,
+              descriptions: "Event Created Successfully",
+              text: "Ok",
+              functionCall: () {
+                Navigator.pop(context);
+                getMethod(Get.context!, getUserProfileEventsURL, null, true, getTeacherEventsRepo);
+              },
+              img: 'assets/icons/dialog_success.png',
+            );
+          });
+    }
+  } on dio_instance.DioException catch (e) {
     log('Exception..$e');
     Get.find<GeneralController>().updateFormLoaderController(false);
+    showDialog(
+        context: Get.context!,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return CustomDialogBox(
+            title: 'Failed',
+            titleColor: AppColors.customDialogErrorColor,
+            descriptions: 'Failed to create event. Please try again.',
+            text: 'Ok',
+            functionCall: () {
+              Navigator.pop(context);
+            },
+            img: 'assets/icons/dialog_error.png',
+          );
+        });
   }
 }
 
@@ -1114,70 +1132,63 @@ addUserProfileBlogDataRepo(
   dio_instance.Dio dio = dio_instance.Dio();
   setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
   setCustomHeader(dio, 'logged-in-as', 'teacher');
-  log('=== SENDING BLOG DATA ===');
-  log('URL: $addEditUserProfileBlogURL');
-  log('Name: $name');
-  log('Description: $description');
-  log('Category ID: $categoryId');
-  log('Tag IDs: $tagIds');
-  log('File Path: ${file1?.path}');
-  log('File Size: ${file1 != null ? file1.lengthSync() : 'No file'} bytes');
-  log('File Name: ${file1?.path.split('/').last}');
-  log('========================');
+  
   try {
-    log('=== SENDING BLOG DATA === ${formData}');
     final response = await dio.post(addEditUserProfileBlogURL, data: formData);
-
-    // Log response
-    log('=== BLOG RESPONSE ===');
-    log('Status Code: ${response.statusCode}');
-    log('Response Data: ${response.data}');
-    log('Headers: ${response.headers}');
-    log('=====================');
-
-    // Check if response is successful
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      Get.find<GeneralController>().updateFormLoaderController(false);
-
-      // Return success with response data
-      return {
-        'success': true,
-        'data': response.data,
-        'message': 'Blog added successfully'
-      };
-    } else {
-      Get.find<GeneralController>().updateFormLoaderController(false);
-
-      return {
-        'success': false,
-        'message': 'Failed to add blog',
-        'data': response.data
-      };
-    }
-
-  } on dio_instance.DioError catch (e) {
-    // Detailed Dio error logging
-    log('=== DIO ERROR ===');
-    log('Error Type: ${e.type}');
-    log('Error Message: ${e.message}');
-    log('Status Code: ${e.response?.statusCode}');
-    log('Error Data: ${e.response?.data}');
-    log('Request Path: ${e.requestOptions.path}');
-    log('Request Method: ${e.requestOptions.method}');
-    log('Request Headers: ${e.requestOptions.headers}');
-    log('=================');
-
     Get.find<GeneralController>().updateFormLoaderController(false);
 
-    return {
-      'success': false,
-      'message': e.message ?? 'Network error occurred',
-      'statusCode': e.response?.statusCode,
-      'errorData': e.response?.data
-    };
-  } catch (e) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return CustomDialogBox(
+              title: 'Success!',
+              titleColor: AppColors.customDialogSuccessColor,
+              descriptions: 'Blog Post Created Successfully',
+              text: 'Ok',
+              functionCall: () {
+                Navigator.pop(context);
+                getMethod(Get.context!, getUserProfileBlogsURL, null, true, getTeacherBlogsRepo);
+              },
+              img: 'assets/icons/dialog_success.png',
+            );
+          });
+    } else {
+      showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return CustomDialogBox(
+              title: 'Failed',
+              titleColor: AppColors.customDialogErrorColor,
+              descriptions: 'Failed to create blog post. Please try again.',
+              text: 'Ok',
+              functionCall: () {
+                Navigator.pop(context);
+              },
+              img: 'assets/icons/dialog_error.png',
+            );
+          });
+    }
+  } on dio_instance.DioException catch (e) {
     log('Exception..$e');
     Get.find<GeneralController>().updateFormLoaderController(false);
+    showDialog(
+        context: Get.context!,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return CustomDialogBox(
+            title: 'Failed',
+            titleColor: AppColors.customDialogErrorColor,
+            descriptions: 'Failed to create blog post. Please try again.',
+            text: 'Ok',
+            functionCall: () {
+              Navigator.pop(context);
+            },
+            img: 'assets/icons/dialog_error.png',
+          );
+        });
   }
 }
 
@@ -1203,9 +1214,28 @@ addUserProfileServiceDataRepo(
   setCustomHeader(dio, 'logged-in-as', 'teacher');
   
   try {
-    await dio.post(addEditUserProfileServiceURL, data: formData);
+    dio_instance.Response response = await dio.post(addEditUserProfileServiceURL, data: formData);
     Get.find<GeneralController>().updateFormLoaderController(false);
-  } catch (e) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return CustomDialogBox(
+              title: 'Success',
+              titleColor: AppColors.customDialogSuccessColor,
+              descriptions: 'Service Added Successfully',
+              text: 'Ok',
+              functionCall: () {
+                Navigator.pop(context);
+                getMethod(Get.context!, getUserProfileServicesURL, null, true,
+                    getTeacherServiceRepo);
+              },
+              img: 'assets/icons/dialog_success.png',
+            );
+          });
+    }
+  } on dio_instance.DioException catch (e) {
     log('Exception..$e');
     Get.find<GeneralController>().updateFormLoaderController(false);
   }
@@ -1235,10 +1265,132 @@ addUserProfileBroadcastDataRepo(
   setCustomHeader(dio, 'logged-in-as', 'teacher');
   
   try {
-    await dio.post(addEditUserProfileBroadcastURL, data: formData);
+    final response = await dio.post(addEditUserProfileBroadcastURL, data: formData);
     Get.find<GeneralController>().updateFormLoaderController(false);
-  } catch (e) {
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return CustomDialogBox(
+              title: 'Success!',
+              titleColor: AppColors.customDialogSuccessColor,
+              descriptions: "Media Created Successfully",
+              text: "Ok",
+              functionCall: () {
+                Navigator.pop(context);
+                getMethod(Get.context!, getUserProfileBroadcastsURL, null, true, getTeacherBroadcastsRepo);
+              },
+              img: 'assets/icons/dialog_success.png',
+            );
+          });
+    }
+  } on dio_instance.DioException catch (e) {
     log('Exception..$e');
     Get.find<GeneralController>().updateFormLoaderController(false);
+    showDialog(
+        context: Get.context!,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return CustomDialogBox(
+            title: 'Failed',
+            titleColor: AppColors.customDialogErrorColor,
+            descriptions: 'Failed to create media. Please try again.',
+            text: "Ok",
+            functionCall: () {
+              Navigator.pop(context);
+            },
+            img: 'assets/icons/dialog_error.png',
+          );
+        });
   }
 }
+
+addUserProfileArchiveDataRepo(
+  String? name,
+  String? description,
+  String? categoryId,
+  dynamic tagIds,
+  String? fileType,
+  String? fileURL,
+  File? file1,
+) async {
+  dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
+    'name': name,
+    'description': description,
+    'archive_category_id': categoryId,
+    'tag_ids[]': tagIds,
+    'file_type': fileType,
+    'file_url': fileURL,
+    'image': file1 != null ? await dio_instance.MultipartFile.fromFile(file1.path) : null,
+    'is_active': 1,
+  });
+  dio_instance.Dio dio = dio_instance.Dio();
+  setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
+  setCustomHeader(dio, 'logged-in-as', 'teacher');
+
+  try {
+    final response = await dio.post(addEditUserProfileArchiveURL, data: formData);
+    Get.find<GeneralController>().updateFormLoaderController(false);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return CustomDialogBox(
+              title: 'Success!',
+              titleColor: AppColors.customDialogSuccessColor,
+              descriptions: "Course Created Successfully",
+              text: "Ok",
+              functionCall: () {
+                Navigator.pop(context);
+                getMethod(Get.context!, getUserProfileArchivesURL, null, true, getTeacherArchivesRepo);
+              },
+              img: 'assets/icons/dialog_success.png',
+            );
+          });
+    }
+  } on dio_instance.DioException catch (e) {
+    log('Exception..$e');
+    Get.find<GeneralController>().updateFormLoaderController(false);
+    showDialog(
+        context: Get.context!,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return CustomDialogBox(
+            title: 'Failed',
+            titleColor: AppColors.customDialogErrorColor,
+            descriptions: 'Failed to create course. Please try again.',
+            text: "Ok",
+            functionCall: () {
+              Navigator.pop(context);
+            },
+            img: 'assets/icons/dialog_error.png',
+          );
+        });
+  }
+}
+
+deleteTeacherArchiveRepo(
+  BuildContext context,
+  String? url,
+  dynamic payload,
+) async {
+  log("Deleting archive from $url");
+  Get.find<GeneralController>().updateFormLoaderController(true);
+
+  deleteMethod(context, url!, payload, true, (ctx, success, data) {
+    Get.find<GeneralController>().updateFormLoaderController(false);
+    if (success) {
+      getMethod(Get.context!, getUserProfileArchivesURL, null, true, getTeacherArchivesRepo);
+      Get.snackbar('Success', 'Course Deleted Successfully',
+          backgroundColor: AppColors.primaryColor, colorText: AppColors.white);
+    } else {
+      Get.snackbar('Error', 'Failed to delete course',
+          backgroundColor: AppColors.carrotRed, colorText: AppColors.white);
+    }
+  });
+}
+

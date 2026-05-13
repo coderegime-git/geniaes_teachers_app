@@ -340,6 +340,9 @@ class TeacherAppointmentHistoryModel {
     String? question,
     dynamic attachmentUrl,
     num? appointmentStatusCode,
+    num? isRating,
+    num? rating,
+    String? comment,
     List<Messages>? messages,
     String? createdAt,
     String? updatedAt,
@@ -366,6 +369,9 @@ class TeacherAppointmentHistoryModel {
     _question = question;
     _attachmentUrl = attachmentUrl;
     _appointmentStatusCode = appointmentStatusCode;
+    _isRating = isRating;
+    _rating = rating;
+    _comment = comment;
     _messages = messages;
     _createdAt = createdAt;
     _updatedAt = updatedAt;
@@ -394,6 +400,9 @@ class TeacherAppointmentHistoryModel {
     _question = json['question'];
     _attachmentUrl = json['attachment_url'];
     _appointmentStatusCode = json['appointment_status_code'];
+    _isRating = json['is_rating'];
+    _rating = json['rating'];
+    _comment = json['comment'];
     if (json['messages'] != null) {
       _messages = [];
       json['messages'].forEach((v) {
@@ -425,6 +434,9 @@ class TeacherAppointmentHistoryModel {
   String? _question;
   dynamic _attachmentUrl;
   num? _appointmentStatusCode;
+  num? _isRating;
+  num? _rating;
+  String? _comment;
   List<Messages>? _messages;
   String? _createdAt;
   String? _updatedAt;
@@ -451,6 +463,9 @@ class TeacherAppointmentHistoryModel {
     String? question,
     dynamic attachmentUrl,
     num? appointmentStatusCode,
+    num? isRating,
+    num? rating,
+    String? comment,
     List<Messages>? messages,
     String? createdAt,
     String? updatedAt,
@@ -478,6 +493,9 @@ class TeacherAppointmentHistoryModel {
         question: question ?? _question,
         attachmentUrl: attachmentUrl ?? _attachmentUrl,
         appointmentStatusCode: appointmentStatusCode ?? _appointmentStatusCode,
+        isRating: isRating ?? _isRating,
+        rating: rating ?? _rating,
+        comment: comment ?? _comment,
         messages: messages ?? _messages,
         createdAt: createdAt ?? _createdAt,
         updatedAt: updatedAt ?? _updatedAt,
@@ -504,6 +522,9 @@ class TeacherAppointmentHistoryModel {
   String? get question => _question;
   dynamic get attachmentUrl => _attachmentUrl;
   num? get appointmentStatusCode => _appointmentStatusCode;
+  num? get isRating => _isRating;
+  num? get rating => _rating;
+  String? get comment => _comment;
   List<Messages>? get messages => _messages;
   String? get createdAt => _createdAt;
   String? get updatedAt => _updatedAt;
@@ -532,6 +553,9 @@ class TeacherAppointmentHistoryModel {
     map['question'] = _question;
     map['attachment_url'] = _attachmentUrl;
     map['appointment_status_code'] = _appointmentStatusCode;
+    map['is_rating'] = _isRating;
+    map['rating'] = _rating;
+    map['comment'] = _comment;
     if (_messages != null) {
       map['messages'] = _messages?.map((v) => v.toJson()).toList();
     }

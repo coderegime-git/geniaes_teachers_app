@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
@@ -17,6 +18,9 @@ import '../widgets/appbar_widget.dart';
 import '../widgets/button_widget.dart';
 import 'agora_call/repo.dart';
 
+import '../widgets/rating_dialog.dart';
+import '../repositories/add_appointment_rating_repo.dart';
+
 class AppointmentDetailScreen extends StatefulWidget {
   const AppointmentDetailScreen({super.key});
 
@@ -24,6 +28,7 @@ class AppointmentDetailScreen extends StatefulWidget {
   State<AppointmentDetailScreen> createState() =>
       AppointmentDetailScreenState();
 }
+
 
 class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   @override
@@ -415,108 +420,258 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               generalController.selectedAppointmentHistoryForView
                           .appointmentStatusCode ==
                       2
-                  ? generalController.selectedAppointmentHistoryForView
-                              .appointmentTypeId ==
-                          1
-                      ? ButtonWidgetOne(
-                          onTap: () {
-                            generalController.updateTokenForCall(
-                                generalController.tokenForCall);
-                            Get.toNamed(PageRoutes.videoCallScreen, arguments: [
-                              {
-                                "appointment": generalController
-                                    .selectedAppointmentHistoryForView
-                              },
-                            ]);
-                          },
-                          buttonText: generalController
-                              .selectedAppointmentHistoryForView
-                              .appointmentTypeName!,
-                          buttonTextStyle: AppTextStyles.buttonTextStyle1,
-                          borderRadius: 40,
-                          buttonColor: AppColors.gradientOne)
-                      : generalController.selectedAppointmentHistoryForView
-                                  .appointmentTypeId ==
-                              2
-                          ? ButtonWidgetOne(
-                              onTap: () {
-                                generalController.updateTokenForCall(
-                                    generalController.tokenForCall);
-                                Get.toNamed(PageRoutes.audioCallScreen,
-                                    arguments: [
-                                      {
-                                        "appointment": generalController
-                                            .selectedAppointmentHistoryForView
-                                      },
-                                    ]);
-                              },
-                              buttonText: generalController
-                                  .selectedAppointmentHistoryForView
-                                  .appointmentTypeName!,
-                              buttonTextStyle: AppTextStyles.buttonTextStyle1,
-                              borderRadius: 40,
-                              buttonColor: AppColors.gradientOne)
-                          : generalController.selectedAppointmentHistoryForView
-                                      .appointmentTypeId ==
-                                  3
-                              ? ButtonWidgetOne(
-                                  onTap: () {
-                                    generalController.updateTokenForCall(
-                                        generalController.tokenForCall);
-                                    Get.toNamed(PageRoutes.liveChatScreen,
-                                        arguments: [
-                                          {
-                                            "appointment": generalController
-                                                .selectedAppointmentHistoryForView
-                                          },
-                                        ]);
-                                  },
-                                  buttonText: generalController
-                                      .selectedAppointmentHistoryForView
-                                      .appointmentTypeName!,
-                                  buttonTextStyle:
-                                      AppTextStyles.buttonTextStyle1,
-                                  borderRadius: 40,
-                                  buttonColor: AppColors.gradientOne)
-                              : Container()
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ? Column(
                       children: [
+                        generalController.selectedAppointmentHistoryForView
+                                    .appointmentTypeId ==
+                                1
+                            ? ButtonWidgetOne(
+                                onTap: () {
+                                  generalController.updateTokenForCall(
+                                      generalController.tokenForCall);
+                                  Get.toNamed(PageRoutes.videoCallScreen,
+                                      arguments: [
+                                        {
+                                          "appointment": generalController
+                                              .selectedAppointmentHistoryForView
+                                        },
+                                      ]);
+                                },
+                                buttonText: generalController
+                                    .selectedAppointmentHistoryForView
+                                    .appointmentTypeName!,
+                                buttonTextStyle: AppTextStyles.buttonTextStyle1,
+                                borderRadius: 40,
+                                buttonColor: AppColors.gradientOne)
+                            : generalController.selectedAppointmentHistoryForView
+                                        .appointmentTypeId ==
+                                    2
+                                ? ButtonWidgetOne(
+                                    onTap: () {
+                                      generalController.updateTokenForCall(
+                                          generalController.tokenForCall);
+                                      Get.toNamed(PageRoutes.audioCallScreen,
+                                          arguments: [
+                                            {
+                                              "appointment": generalController
+                                                  .selectedAppointmentHistoryForView
+                                            },
+                                          ]);
+                                    },
+                                    buttonText: generalController
+                                        .selectedAppointmentHistoryForView
+                                        .appointmentTypeName!,
+                                    buttonTextStyle: AppTextStyles.buttonTextStyle1,
+                                    borderRadius: 40,
+                                    buttonColor: AppColors.gradientOne)
+                                : generalController
+                                            .selectedAppointmentHistoryForView
+                                            .appointmentTypeId ==
+                                        3
+                                    ? ButtonWidgetOne(
+                                        onTap: () {
+                                          generalController.updateTokenForCall(
+                                              generalController.tokenForCall);
+                                          Get.toNamed(PageRoutes.liveChatScreen,
+                                              arguments: [
+                                                {
+                                                  "appointment": generalController
+                                                      .selectedAppointmentHistoryForView
+                                                },
+                                              ]);
+                                        },
+                                        buttonText: generalController
+                                            .selectedAppointmentHistoryForView
+                                            .appointmentTypeName!,
+                                        buttonTextStyle:
+                                            AppTextStyles.buttonTextStyle1,
+                                        borderRadius: 40,
+                                        buttonColor: AppColors.gradientOne)
+                                    : Container(),
+                        SizedBox(height: 18.h),
                         ButtonWidgetOne(
                             onTap: () {
-                              Get.find<GeneralController>()
+                              generalController
                                   .updateAppointmentStatusLoaderController(
                                       true);
                               postMethod(
                                   context,
                                   "$updateAppointmentStatusCodeURL${generalController.selectedAppointmentHistoryForView.id}",
-                                  {"appointment_status_code": 2},
+                                  {"appointment_status_code": 5},
                                   true,
                                   appointmentStatusUpdateRepo);
                             },
-                            buttonText: LanguageConstant.accept.tr,
+                            buttonText: LanguageConstant.completed.tr,
                             buttonTextStyle: AppTextStyles.buttonTextStyle1,
                             borderRadius: 40,
                             buttonColor: AppColors.gradientOne),
-                        SizedBox(width: 40.w),
-                        ButtonWidgetOne(
-                            onTap: () {
-                              Get.find<GeneralController>()
-                                  .updateAppointmentStatusLoaderController(
-                                      true);
-                              postMethod(
-                                  context,
-                                  "$updateAppointmentStatusCodeURL${generalController.selectedAppointmentHistoryForView.id}",
-                                  {"appointment_status_code": 3},
-                                  true,
-                                  appointmentStatusUpdateRepo);
-                            },
-                            buttonText: LanguageConstant.reject.tr,
-                            buttonTextStyle: AppTextStyles.buttonTextStyle1,
-                            borderRadius: 40,
-                            buttonColor: AppColors.gradientOne),
+                        SizedBox(height: 20.h),
                       ],
                     )
+                  : generalController.selectedAppointmentHistoryForView
+                              .appointmentStatusCode ==
+                          1
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ButtonWidgetOne(
+                                onTap: () {
+                                  Get.find<GeneralController>()
+                                      .updateAppointmentStatusLoaderController(
+                                          true);
+                                  postMethod(
+                                      context,
+                                      "$updateAppointmentStatusCodeURL${generalController.selectedAppointmentHistoryForView.id}",
+                                      {"appointment_status_code": 2},
+                                      true,
+                                      appointmentStatusUpdateRepo);
+                                },
+                                buttonText: LanguageConstant.accept.tr,
+                                buttonTextStyle: AppTextStyles.buttonTextStyle1,
+                                borderRadius: 40,
+                                buttonColor: AppColors.gradientOne),
+                            SizedBox(width: 40.w),
+                            ButtonWidgetOne(
+                                onTap: () {
+                                  Get.find<GeneralController>()
+                                      .updateAppointmentStatusLoaderController(
+                                          true);
+                                  postMethod(
+                                      context,
+                                      "$updateAppointmentStatusCodeURL${generalController.selectedAppointmentHistoryForView.id}",
+                                      {"appointment_status_code": 3},
+                                      true,
+                                      appointmentStatusUpdateRepo);
+                                },
+                                buttonText: LanguageConstant.reject.tr,
+                                buttonTextStyle: AppTextStyles.buttonTextStyle1,
+                                borderRadius: 40,
+                                buttonColor: AppColors.gradientOne),
+                          ],
+                        )
+                      : generalController.selectedAppointmentHistoryForView
+                                  .appointmentStatusCode ==
+                              5
+                          ? Column(
+                              children: [
+                                if (generalController
+                                        .selectedAppointmentHistoryForView
+                                        .isRating !=
+                                    1)
+                                  ButtonWidgetOne(
+                                      onTap: () {
+                                        showDialog(
+                                            context: context,
+                                            builder: (context) => RatingDialog(
+                                                  onSubmit: (rating, comment) {
+                                                    log("Rating: $rating, Comment: $comment");
+                                                    Get.find<GeneralController>()
+                                                        .updateAppointmentStatusLoaderController(
+                                                            true);
+                                                    postMethod(
+                                                        context,
+                                                        addAppointmentRatingURL,
+                                                        {
+                                                          "booked_appointment_id":
+                                                              generalController
+                                                                  .selectedAppointmentHistoryForView
+                                                                  .id,
+                                                          "comment": comment,
+                                                          "rating": rating
+                                                        },
+                                                        true,
+                                                        addAppointmentRatingRepo);
+                                                  },
+                                                ));
+                                      },
+                                      buttonText: LanguageConstant.rateUs.tr,
+                                      buttonTextStyle:
+                                          AppTextStyles.buttonTextStyle1,
+                                      borderRadius: 40,
+                                      buttonColor: AppColors.gradientOne),
+                                if (generalController
+                                            .selectedAppointmentHistoryForView
+                                            .rating !=
+                                        null ||
+                                    (generalController
+                                                .selectedAppointmentHistoryForView
+                                                .comment !=
+                                            null &&
+                                        generalController
+                                            .selectedAppointmentHistoryForView
+                                            .comment!
+                                            .isNotEmpty))
+                                  Container(
+                                    width: double.infinity,
+                                    // margin: EdgeInsets.only(top: 5.h),
+                                    padding: EdgeInsets.all(16.w),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      border: Border.all(
+                                          color: AppColors.grey.withOpacity(0.2)),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.1),
+                                          spreadRadius: 1,
+                                          blurRadius: 5,
+                                        )
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          LanguageConstant.yourFeedback.tr,
+                                          style: AppTextStyles.bodyTextStyle14,
+                                        ),
+                                        SizedBox(height: 12.h),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              "${LanguageConstant.rating.tr}: ",
+                                              style: AppTextStyles.bodyTextStyle10,
+                                            ),
+                                            Row(
+                                              children: List.generate(5, (index) {
+                                                return Icon(
+                                                  index <
+                                                          generalController
+                                                              .selectedAppointmentHistoryForView
+                                                              .rating!
+                                                      ? Icons.star
+                                                      : Icons.star_border,
+                                                  color: Colors.amber,
+                                                  size: 18.h,
+                                                );
+                                              }),
+                                            ),
+                                          ],
+                                        ),
+                                        if (generalController
+                                                .selectedAppointmentHistoryForView
+                                                .comment !=
+                                            null &&
+                                            generalController
+                                                .selectedAppointmentHistoryForView
+                                                .comment!
+                                                .isNotEmpty)
+                                          Padding(
+                                            padding: EdgeInsets.only(top: 8.h),
+                                            child: Text(
+                                              "${LanguageConstant.comment.tr}: ${generalController.selectedAppointmentHistoryForView.comment!}",
+                                              style:
+                                                  AppTextStyles.bodyTextStyle10,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                SizedBox(height: 20.h),
+                              ],
+                            )
+                          : const SizedBox()
             ]),
           ),
         ),

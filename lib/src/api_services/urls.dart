@@ -56,6 +56,13 @@ String getUserProfilePodcastsURL = '${apiBaseUrl}teachers/teacher_podcasts';
 String getUserProfileEventsURL = '${apiBaseUrl}teachers/teacher_events';
 //---get-profile-Blogs
 String getUserProfileBlogsURL = '${apiBaseUrl}teachers/teacher_posts';
+//---get-profile-Services
+String getUserProfileServicesURL = '${apiBaseUrl}teachers/teacher_services';
+//---get-profile-Broadcasts
+String getUserProfileBroadcastsURL = '${apiBaseUrl}teachers/teacher_broadcasts';
+//---get-profile-Archives
+String getUserProfileArchivesURL = '${apiBaseUrl}teachers/teacher_archives';
+String addEditUserProfileArchiveURL = '${apiBaseUrl}teachers/teacher_archives';
 
 // Social Info
 String getSocialInfoURL    = '${apiBaseUrl}teachers/get_social_info';
@@ -96,6 +103,9 @@ String getServiceCategoriesURL = '${apiBaseUrl}service_categories';
 
 // Event Categories
 String getEventCategoriesURL = '${apiBaseUrl}event_categories';
+
+// Archive Categories
+String getArchiveCategoriesURL = '${apiBaseUrl}archive_categories';
 
 ///---top-rated
 String getTopRatedConsultantURL = '${apiBaseUrl}topRatedMentors';
@@ -147,6 +157,7 @@ String withdrawAmountURL = '${apiBaseUrl}withdraw_amount';
 /// rating
 String createRatingUrl = '${apiBaseUrl}create-rating';
 String getExistRatingUrl = '${apiBaseUrl}rating-exist-appointment';
+String addAppointmentRatingURL = "${apiBaseUrl}students/add_appointment_rating";
 
 ///---agora
 String getAgoraTokenUrl = '${apiBaseUrl}teachers/api_generate_agora_token';

@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../models/all_blog_posts_model.dart';
 import '../models/get_teacher_profile_certificate_model.dart';
 import '../models/get_teacher_profile_education_model.dart';
 import '../models/get_teacher_profile_experience_model.dart';
 import '../models/get_teacher_profile_podcast_model.dart';
+import '../models/get_teacher_profile_event_model.dart';
+import '../models/get_teacher_profile_service_model.dart';
 import '../models/categories_tags_model.dart';
 import '../api_services/get_service.dart';
 import '../api_services/urls.dart';
@@ -21,6 +24,16 @@ class EditProfileController extends GetxController {
       GetTeacherProfileEducationModel(); //  for saving User Education Profile
   GetTeacherProfilePodcastModel getTeacherProfilePodcastModel =
       GetTeacherProfilePodcastModel(); //  for saving User Podcast Profile
+  GetTeacherProfileEventModel getTeacherProfileEventModel =
+      GetTeacherProfileEventModel(); //  for saving User Event Profile
+  GetTeacherProfilePodcastModel getTeacherProfileBroadcastModel =
+      GetTeacherProfilePodcastModel(); //  for saving User Broadcast Profile
+  GetAllBlogPostsModel getTeacherProfileBlogModel =
+      GetAllBlogPostsModel(); //  for saving User Blog Profile
+  GetTeacherProfilePodcastModel getTeacherProfileArchiveModel =
+      GetTeacherProfilePodcastModel(); //  for saving User Archive Profile
+  GetTeacherProfileServiceModel getTeacherProfileServiceModel =
+      GetTeacherProfileServiceModel(); //  for saving User Service Profile
   TeacherProfileCertificateModel teacherProfileCertificateModel =
       TeacherProfileCertificateModel(); //  for saving User Certificate Profile
   TeacherProfileExperienceModel teacherProfileExperienceModel =
@@ -29,6 +42,12 @@ class EditProfileController extends GetxController {
       TeacherProfileEducationModel(); //  for saving User Education Profile
   TeacherProfilePodcastModel teacherProfilePodcastModel =
       TeacherProfilePodcastModel(); //  for saving User Podcast Profile
+  TeacherProfileEventModel teacherProfileEventModel =
+      TeacherProfileEventModel(); //  for saving User Event Profile
+  TeacherProfileServiceModel teacherProfileServiceModel =
+      TeacherProfileServiceModel(); //  for saving User Service Profile
+  TeacherProfilePodcastModel teacherProfileBroadcastModel =
+      TeacherProfilePodcastModel(); //  for saving User Broadcast Profile
 
   // Basic Information Controllers
   TextEditingController userProfileFirstNameController =
@@ -85,15 +104,16 @@ class EditProfileController extends GetxController {
   TextEditingController broadcastFileLinkController = TextEditingController();
   TextEditingController eventEndDateController = TextEditingController();
   int? selectedBlogCategoryId, selectedEventCategoryId;
-  int? selectedServiceCategoryId, selectedPodcastCategoryId;
+  int? selectedServiceCategoryId, selectedPodcastCategoryId, selectedArchiveCategoryId;
   List<int> selectedBlogTagIds = [], selectedEventTagIds = [];
-  List<int> selectedServiceTagIds = [], selectedPodcastTagIds = [];
+  List<int> selectedServiceTagIds = [], selectedPodcastTagIds = [], selectedArchiveTagIds = [];
 
   // Category and Tag Lists
   List<CategoryModel> broadcastCategories = [];
   List<CategoryModel> eventCategories = [];
   List<CategoryModel> blogCategories = [];
   List<CategoryModel> serviceCategories = [];
+  List<CategoryModel> archiveCategories = [];
   List<TagModel> allTags = [];
   
   List<int> selectedMediaTagIds = []; // For Teacher Posts (Media)
@@ -110,6 +130,7 @@ class EditProfileController extends GetxController {
       fetchEventCategories(),
       fetchBlogCategories(),
       fetchServiceCategories(),
+      fetchArchiveCategories(),
       fetchTags(),
     ]);
   }
@@ -182,6 +203,23 @@ class EditProfileController extends GetxController {
     );
   }
 
+  Future<void> fetchArchiveCategories() async {
+    await getMethod(
+        Get.context!,
+        getArchiveCategoriesURL,
+        null,
+        false,
+            (context, success, data) {
+          if (success && data != null && data['success'] == true) {
+            archiveCategories = (data['data'] as List)
+                .map((e) => CategoryModel.fromJson(e))
+                .toList();
+            update();
+          }
+        }
+    );
+  }
+
   Future<void> fetchTags() async {
     await getMethod(
         Get.context!,
@@ -212,6 +250,11 @@ class EditProfileController extends GetxController {
       [];
   List<TeacherProfileEducationModel> teacherProfileEducationForPagination = [];
   List<TeacherProfilePodcastModel> teacherProfilePodcastForPagination = [];
+  List<TeacherProfileEventModel> teacherProfileEventForPagination = [];
+  List<TeacherProfileServiceModel> teacherProfileServiceForPagination = [];
+  List<TeacherProfilePodcastModel> teacherProfileBroadcastForPagination = [];
+  List<BlogModel> teacherProfileBlogForPagination = [];
+  List<TeacherProfilePodcastModel> teacherProfileArchiveForPagination = [];
 
   bool allTeacherCertificateLoader = false;
   updateTeacherCertificateLoader(bool newValue) {
@@ -234,6 +277,36 @@ class EditProfileController extends GetxController {
   bool allTeacherPodcastLoader = false;
   updateTeacherPodcastLoader(bool newValue) {
     allTeacherPodcastLoader = newValue;
+    update();
+  }
+
+  bool allTeacherBroadcastLoader = false;
+  updateTeacherBroadcastLoader(bool newValue) {
+    allTeacherBroadcastLoader = newValue;
+    update();
+  }
+
+  bool allTeacherBlogLoader = false;
+  updateTeacherBlogLoader(bool newValue) {
+    allTeacherBlogLoader = newValue;
+    update();
+  }
+
+  bool allTeacherEventLoader = false;
+  updateTeacherEventLoader(bool newValue) {
+    allTeacherEventLoader = newValue;
+    update();
+  }
+
+  bool allTeacherArchiveLoader = false;
+  updateTeacherArchiveLoader(bool newValue) {
+    allTeacherArchiveLoader = newValue;
+    update();
+  }
+
+  bool allTeacherServiceLoader = false;
+  updateTeacherServiceLoader(bool newValue) {
+    allTeacherServiceLoader = newValue;
     update();
   }
 
@@ -265,6 +338,18 @@ class EditProfileController extends GetxController {
     update();
   }
 
+  bool getTeacherEventCheck = false;
+  getTeacherEventDataCheck(bool value) {
+    getTeacherEventCheck = value;
+    update();
+  }
+
+  bool getTeacherServiceCheck = false;
+  getTeacherServiceDataCheck(bool value) {
+    getTeacherServiceCheck = value;
+    update();
+  }
+
   int? selectedTeacherCertificateIndex = 0;
   updateSelectedTeacherCertificateIndex(int? newValue) {
     selectedTeacherCertificateIndex = newValue;
@@ -286,6 +371,12 @@ class EditProfileController extends GetxController {
   int? selectedTeacherPodcastIndex = 0;
   updateSelectedTeacherPodcastIndex(int? newValue) {
     selectedTeacherPodcastIndex = newValue;
+    update();
+  }
+
+  int? selectedTeacherEventIndex = 0;
+  updateSelectedTeacherEventIndex(int? newValue) {
+    selectedTeacherEventIndex = newValue;
     update();
   }
 
@@ -349,6 +440,18 @@ class EditProfileController extends GetxController {
     }
   }
 
+  /// Event-paginated-data-fetch
+  Future paginationEventDataLoad(BuildContext context) async {
+    log("load more");
+    // update data and loading status
+    if (getTeacherProfileEventModel.data!.meta!.lastPage! >
+        getTeacherProfileEventModel.data!.meta!.currentPage!) {
+      Get.find<GeneralController>().changeGetPaginationProgressCheck(true);
+
+      update();
+    }
+  }
+
   updateTeacherCertificateForPagination(
       TeacherProfileCertificateModel teacherProfileCertificateModel) {
     teacherProfileCertificateForPagination.add(teacherProfileCertificateModel);
@@ -370,6 +473,34 @@ class EditProfileController extends GetxController {
   updateTeacherPodcastForPagination(
       TeacherProfilePodcastModel teacherProfilePodcastModel) {
     teacherProfilePodcastForPagination.add(teacherProfilePodcastModel);
+    update();
+  }
+
+  updateTeacherBroadcastForPagination(
+      TeacherProfilePodcastModel teacherProfilePodcastModel) {
+    teacherProfileBroadcastForPagination.add(teacherProfilePodcastModel);
+    update();
+  }
+
+  updateTeacherEventForPagination(
+      TeacherProfileEventModel teacherProfileEventModel) {
+    teacherProfileEventForPagination.add(teacherProfileEventModel);
+    update();
+  }
+
+  updateTeacherBlogForPagination(BlogModel blogModel) {
+    teacherProfileBlogForPagination.add(blogModel);
+    update();
+  }
+
+  updateTeacherArchiveForPagination(TeacherProfilePodcastModel element) {
+    teacherProfileArchiveForPagination.add(element);
+    update();
+  }
+
+  updateTeacherServiceForPagination(
+      TeacherProfileServiceModel teacherProfileServiceModel) {
+    teacherProfileServiceForPagination.add(teacherProfileServiceModel);
     update();
   }
 

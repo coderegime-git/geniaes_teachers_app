@@ -109,10 +109,8 @@ class TeacherProfileScreenState extends State<TeacherProfileScreen>
         ? 1
         : 0;
 
-    tabController = TabController(
-        vsync: this,
-        length: tabsLength,
-        initialIndex: initIndex);
+    tabController =
+        TabController(vsync: this, length: tabsLength, initialIndex: initIndex);
     // getMethod(context, getLoggedInUserUrl, null, true, loggedInUserRepo);
     editProfileLogic.userProfileFirstNameController.text =
         generalLogic.currentTeacherModel!.loginInfo!.firstName ?? '';
@@ -348,8 +346,7 @@ class TeacherProfileScreenState extends State<TeacherProfileScreen>
                       ),
                     ),
                     child: TabBarView(
-                        controller: tabController,
-                        children: getTabViews())),
+                        controller: tabController, children: getTabViews())),
               ),
             ));
       });
@@ -672,12 +669,20 @@ class GeneralInfoWidget extends StatelessWidget {
                 Get.to(TeacherExperienceWidget());
               },
             ),
-            if (_hasModule("teacher-podcasts"))
+            if (_hasModule("teacher-broadcasts"))
               CustomTileWidgetTwo(
                 tileTitle: "Media".tr,
                 tileColor: AppColors.primaryColor,
                 onTap: () {
                   Get.to(TeacherPodcastsWidget());
+                },
+              ),
+            if (_hasModule("teacher-podcasts"))
+              CustomTileWidgetTwo(
+                tileTitle: LanguageConstant.podcasts.tr,
+                tileColor: AppColors.primaryColor,
+                onTap: () {
+                  Get.to(const TeacherBroadcastsWidget());
                 },
               ),
             if (_hasModule("teacher-blogs"))
@@ -712,26 +717,28 @@ class GeneralInfoWidget extends StatelessWidget {
                   Get.to(const TeacherServicesWidget());
                 },
               ),
-            if (_hasModule("teacher-broadcasts"))
+            if (_hasModule("teacher-archives"))
               CustomTileWidgetTwo(
-                tileTitle: LanguageConstant.podcasts.tr,
+                tileTitle: LanguageConstant.courses.tr,
                 tileColor: AppColors.primaryColor,
                 onTap: () {
-                  Get.to(const TeacherBroadcastsWidget());
+                  Get.to(const TeacherArchivesWidget());
                 },
               ),
             Center(
               child: SizedBox(
                 width: 140.w,
                 child: ButtonWidgetOne(
-                    onTap: () {
-                      getMethod(context, deleteAccountURL, null, true,
-                          deleteAccountRepo);
-                    },
-                    buttonText: LanguageConstant.deleteAccount.tr,
-                    buttonTextStyle: AppTextStyles.bodyTextStyle17,
-                    borderRadius: 40,
-                    buttonColor: AppColors.gradientOne),
+                  onTap: () {
+                    getMethod(context, deleteAccountURL, null, true,
+                        deleteAccountRepo);
+                  },
+                  buttonText: LanguageConstant.deleteAccount.tr,
+                  buttonTextStyle: AppTextStyles.bodyTextStyle9
+                      .copyWith(color: Colors.black),
+                  borderRadius: 40,
+                  buttonColor: AppColors.gradientOne,
+                ),
               ),
             )
           ],

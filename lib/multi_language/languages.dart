@@ -1,4 +1,4 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 
 class LanguagesChang extends Translations {
   @override
@@ -158,6 +158,7 @@ class LanguagesChang extends Translations {
           'schedule_slots': 'Schedule Slots',
           'social_info': 'Social Info',
           'basic_information': 'Basic Information',
+          'courses' : 'courses',
           'education': 'Education',
           'certificate': 'Certificate',
           'experience': 'Experience',
@@ -190,6 +191,7 @@ class LanguagesChang extends Translations {
           'add_new_teacher_podcast': 'Add New Teacher Podcast',
           'podcast_file_name_here': 'Podcast file name here',
           'select_file_type': 'Select file type',
+          'select_tag_type': 'Select tag type',
           'select_link_type': 'Select link type',
           'audio': 'audio',
           'video': 'video',
@@ -273,6 +275,9 @@ class LanguagesChang extends Translations {
           'appointment_detail': 'Appointment Detail',
           'type': 'Type',
           'delete_account': 'Delete Account',
+          'rate_us': 'Rate Us',
+          'your_feedback': 'Your Feedback',
+          'comment': 'Comment',
         },
         'hi_IN': {
           'sign_in': 'दाखिल करना',
