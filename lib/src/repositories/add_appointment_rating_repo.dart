@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/general_controller.dart';
 import '../models/teacher_appointment_history_model.dart';
+import '../routes.dart';
 
 addAppointmentRatingRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
@@ -25,7 +26,8 @@ addAppointmentRatingRepo(
         );
       }
       generalController.update();
-
+      Get.offNamed(PageRoutes.appointmentHistoryScreen,
+          arguments: {'tabIndex': 4});
       Get.snackbar(
           "Success", response["message"] ?? "Rating submitted successfully",
           snackPosition: SnackPosition.BOTTOM);
