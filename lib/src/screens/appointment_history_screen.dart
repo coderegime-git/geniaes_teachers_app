@@ -99,9 +99,10 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
     return GetBuilder<TeacherAppointmentHistoryController>(
         builder: (teacherAppointmentHistoryController) {
           return GetBuilder<GeneralController>(builder: (generalController) {
+            int initialTab = Get.arguments != null ? Get.arguments['tabIndex'] ?? 0 : 0;
             return DefaultTabController(
               length: 5,
-              initialIndex: 0,
+              initialIndex: initialTab,
               child: Scaffold(
                 backgroundColor: AppColors.white,
                 appBar: PreferredSize(
