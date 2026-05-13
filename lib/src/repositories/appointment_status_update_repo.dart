@@ -11,8 +11,13 @@ appointmentStatusUpdateRepo(
     if (response["success"] == true) {
       Get.find<GeneralController>()
           .updateAppointmentStatusLoaderController(false);
-      Get.offNamed(PageRoutes.appointmentHistoryScreen,
-          arguments: {'tabIndex': 4});
+      if (response["data"] != null &&
+          response["data"]["appointment_status_code"] == 5) {
+        Get.offNamed(PageRoutes.appointmentHistoryScreen,
+            arguments: {'tabIndex': 4});
+      } else {
+        Get.toNamed(PageRoutes.homeScreen);
+      }
     }
   } else {
     showDialog(
