@@ -267,15 +267,36 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
           return AppointmentCardWidget(
             studentName: item.studentName ?? "",
             studentImage: _studentImage(item.studentImage),
-            appointmentStatus: Container(
-              padding: const EdgeInsets.fromLTRB(5, 2, 5, 2),
-              decoration: BoxDecoration(
-                  color: _statusColor(item.appointmentStatusCode as int?),
-                  borderRadius: BorderRadius.circular(5)),
-              child: Text(
-                item.appointmentStatusName!,
-                style: AppTextStyles.bodyTextStyle4,
-              ),
+            appointmentStatus: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(5, 2, 5, 2),
+                  decoration: BoxDecoration(
+                      color: _statusColor(item.appointmentStatusCode as int?),
+                      borderRadius: BorderRadius.circular(5)),
+                  child: Text(
+                    item.appointmentStatusName!,
+                    style: AppTextStyles.bodyTextStyle4,
+                  ),
+                ),
+                if (statusCode == 5)
+                  Padding(
+                    padding: EdgeInsets.only(top: 4.h),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(5, 2, 5, 2),
+                      decoration: BoxDecoration(
+                          color: item.isRating == 1
+                              ? AppColors.primaryColor.withOpacity(0.7)
+                              : AppColors.grey.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Text(
+                        item.isRating == 1 ? "Rated" : "Not Rated",
+                        style: AppTextStyles.bodyTextStyle4,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             appointmentTypeName: item.appointmentTypeName!,
             dateAndTime:
