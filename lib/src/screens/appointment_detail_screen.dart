@@ -141,7 +141,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                               Text(
                                 generalController
                                     .selectedAppointmentHistoryForView
-                                    .appointmentTypeName!,
+                                    .appointmentTypeName??'',
                                 textAlign: TextAlign.start,
                                 style: AppTextStyles.bodyTextStyle9,
                               ),
@@ -158,17 +158,17 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     decoration: BoxDecoration(
                         color: generalController
                                     .selectedAppointmentHistoryForView
-                                    .appointmentStatusCode! ==
+                                    .appointmentStatusCode ==
                                 1
                             ? AppColors.beigeColor
                             : generalController
                                         .selectedAppointmentHistoryForView
-                                        .appointmentStatusCode! ==
+                                        .appointmentStatusCode ==
                                     5
                                 ? AppColors.green.withOpacity(0.5)
                                 : generalController
                                             .selectedAppointmentHistoryForView
-                                            .appointmentStatusCode! ==
+                                            .appointmentStatusCode ==
                                         2
                                     ? AppColors.orange.withOpacity(0.7)
                                     : AppColors.carrotRed,
@@ -176,7 +176,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     child: Text(
                       // "Pending",
                       generalController.selectedAppointmentHistoryForView
-                          .appointmentStatusName!,
+                          .appointmentStatusName??'',
                       style: AppTextStyles.bodyTextStyle4,
                     ),
                   ),
@@ -218,7 +218,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                           SizedBox(height: 6.h),
                           Text(
                             // "Appointment Type",
-                            "${generalController.selectedAppointmentHistoryForView.date!}",
+                            "${generalController.selectedAppointmentHistoryForView.date}",
                             style: AppTextStyles.bodyTextStyle11,
                           ),
                         ],
