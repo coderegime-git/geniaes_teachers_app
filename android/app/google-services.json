@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "979921148562-73t3115s5dqd7a11b7q3r6rgqvhke5h3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.geniaes.student",
+            "certificate_hash": "15b709ded364e3e13fddfd8c8d1f945f4474b443"
+          }
+        },
+        {
           "client_id": "979921148562-k347dg3g126ol8e3sviadda5baqk8384.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -65,6 +73,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "979921148562-19s8mhf6ne53iqofvrijqc6o1h3t0eke.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.geniaes.teachers",
+            "certificate_hash": "15b709ded364e3e13fddfd8c8d1f945f4474b443"
+          }
+        },
         {
           "client_id": "979921148562-7uj8t69hnfsrlgrbpegm7lej4qb31cea.apps.googleusercontent.com",
           "client_type": 1,

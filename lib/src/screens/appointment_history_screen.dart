@@ -99,7 +99,13 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
     return GetBuilder<TeacherAppointmentHistoryController>(
         builder: (teacherAppointmentHistoryController) {
           return GetBuilder<GeneralController>(builder: (generalController) {
-            int initialTab = Get.arguments != null ? Get.arguments['tabIndex'] ?? 0 : 0;
+            int initialTab = 0;
+            if (Get.arguments is Map) {
+              var args = Get.arguments as Map;
+              if (args.containsKey('tabIndex') && args['tabIndex'] is int) {
+                initialTab = args['tabIndex'];
+              }
+            }
             return DefaultTabController(
               length: 5,
               initialIndex: initialTab,

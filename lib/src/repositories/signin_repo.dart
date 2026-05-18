@@ -17,13 +17,14 @@ signInWithEmailRepo(
   if (responseCheck) {
     Get.find<SigninController>().signInUserModel =
         GetSignInUserModel.fromJson(response);
-    Get.find<GeneralController>().teacherModules =
-        Get.find<SigninController>().signInUserModel.data!.user!.teacherModules;
-
-    print("TEACHER MODULES ${Get.find<GeneralController>().teacherModules}");
 
     if (Get.find<SigninController>().signInUserModel.success.toString() ==
         'true') {
+      Get.find<GeneralController>().teacherModules =
+          Get.find<SigninController>().signInUserModel.data!.user!.teacherModules;
+
+      print("TEACHER MODULES ${Get.find<GeneralController>().teacherModules}");
+
       Get.find<GeneralController>().storageBox.write('authToken',
           Get.find<SigninController>().signInUserModel.data!.token);
 
@@ -54,7 +55,9 @@ signInWithEmailRepo(
             return CustomDialogBox(
               title: LanguageConstant.pleaseTryAgain.tr,
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: '${response['message'].toString()}',
+              descriptions: response["errors"] != null && response["errors"] is Map && response["errors"].isNotEmpty
+                  ? response["errors"].values.first[0].toString()
+                  : '${response["message"]}',
               text: LanguageConstant.ok.tr,
               functionCall: () {
                 Navigator.pop(context);
@@ -71,7 +74,9 @@ signInWithEmailRepo(
           return CustomDialogBox(
             title: LanguageConstant.pleaseTryAgain.tr,
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: '${response['message'].toString()}',
+            descriptions: response["errors"] != null && response["errors"] is Map && response["errors"].isNotEmpty
+                ? response["errors"].values.first[0].toString()
+                : '${response["message"]}',
             text: LanguageConstant.ok.tr,
             functionCall: () {
               Navigator.pop(context);
@@ -116,7 +121,9 @@ socialSignInWithEmailRepo(
             return CustomDialogBox(
               title: LanguageConstant.pleaseTryAgain.tr,
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: '${response["message"]} TT',
+              descriptions: response["errors"] != null && response["errors"] is Map && response["errors"].isNotEmpty
+                  ? response["errors"].values.first[0].toString()
+                  : '${response["message"]}',
               text: LanguageConstant.ok.tr,
               functionCall: () {
                 Navigator.pop(context);
@@ -133,7 +140,9 @@ socialSignInWithEmailRepo(
           return CustomDialogBox(
             title: LanguageConstant.pleaseTryAgain.tr,
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: '${response["message"]} TT',
+            descriptions: response["errors"] != null && response["errors"] is Map && response["errors"].isNotEmpty
+                ? response["errors"].values.first[0].toString()
+                : '${response["message"]}',
             text: LanguageConstant.ok.tr,
             functionCall: () {
               Navigator.pop(context);

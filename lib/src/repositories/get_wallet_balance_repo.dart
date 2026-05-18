@@ -15,6 +15,6 @@ getWalletBalanceRepo(
     Get.find<WalletController>().updateWalletBalanceLoader(true);
     log("${Get.find<WalletController>().getWalletBalanceModel.data} Wallet Balance");
   } else if (!responseCheck) {
-    Get.find<WalletController>().updateWalletBalanceLoader(false);
+    Get.find<WalletController>().updateWalletBalanceLoader(true);
   }
 }

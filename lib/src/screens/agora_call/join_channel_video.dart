@@ -113,6 +113,9 @@ class _State extends State<JoinChannelVideo> with WidgetsBindingObserver {
       setState(() => _engineReady = true);
       // Wait one more frame for the widget to attach its texture.
       await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Start preview BEFORE join so local camera is visible immediately
+      await _engine.startPreview();
     }
     if (!_disposed) await _joinChannel();
   }
@@ -140,6 +143,7 @@ class _State extends State<JoinChannelVideo> with WidgetsBindingObserver {
     // Register handlers ONCE here – never again in _joinChannel.
     _addListeners();
 
+    await _engine.enableAudio();
     await _engine.enableVideo();
     await _engine.enableLocalVideo(true);
     await _engine.setVideoEncoderConfiguration(
@@ -164,8 +168,6 @@ class _State extends State<JoinChannelVideo> with WidgetsBindingObserver {
         log('JoinChannelVideo: joined channel ${connection.channelId}');
         if (!_disposed) {
           setState(() => isJoined = true);
-          // Start preview NOW after join so the local surface is ready.
-          _engine.startPreview();
         }
       },
       onUserJoined: (RtcConnection connection, int uid, int elapsed) {
