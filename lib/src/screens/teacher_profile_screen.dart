@@ -567,7 +567,46 @@ class TeacherProfileScreenState extends State<TeacherProfileScreen>
                 isDefaultAction: true,
                 onPressed: () async {
                   Navigator.pop(context);
+                  setState(() {
+                    Get.find<EditProfileController>().profileImagesList = [];
+                  });
                   await pickImage(context, ImageSource.gallery);
+                  setState(
+                    () {
+                      Get.find<EditProfileController>().profileImage = File(
+                          Get.find<EditProfileController>()
+                              .profileImagesList[0]
+                              .path);
+                      editUserProfileImageRepo(
+                        Get.find<EditProfileController>()
+                            .userProfileFirstNameController
+                            .text,
+                        Get.find<EditProfileController>()
+                            .userProfileLastNameController
+                            .text,
+                        Get.find<EditProfileController>()
+                            .userProfileUserNameController
+                            .text,
+                        Get.find<EditProfileController>()
+                            .userProfileDescriptionController
+                            .text,
+                        Get.find<EditProfileController>()
+                            .userProfileAddressLine1Controller
+                            .text,
+                        Get.find<EditProfileController>()
+                            .userProfileAddressLine2Controller
+                            .text,
+                        Get.find<EditProfileController>()
+                            .userProfileZipCodeController
+                            .text,
+                        [1],
+                        [1],
+                        [1],
+                        Get.find<EditProfileController>().profileImage,
+                        Get.find<EditProfileController>().profileImage,
+                      );
+                    },
+                  );
                 },
                 child: Text(
                   LanguageConstant.gallery.tr,

@@ -192,6 +192,7 @@ editUserProfileImageRepo(
             });
         Get.find<GeneralController>().updateFormLoaderController(false);
       } else {
+        Get.find<EditProfileController>().profileImage = null;
         showDialog(
             context: Get.context!,
             barrierDismissible: false,
@@ -210,6 +211,7 @@ editUserProfileImageRepo(
         Get.find<GeneralController>().updateFormLoaderController(false);
       }
     } else {
+      Get.find<EditProfileController>().profileImage = null;
       Get.find<GeneralController>().updateFormLoaderController(false);
       showDialog(
           context: Get.context!,
@@ -229,6 +231,7 @@ editUserProfileImageRepo(
     }
   } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
+    Get.find<EditProfileController>().profileImage = null;
     Get.find<GeneralController>().updateFormLoaderController(false);
     showDialog(
         context: Get.context!,
@@ -237,7 +240,7 @@ editUserProfileImageRepo(
           return CustomDialogBox(
             title: 'Failed',
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: 'Inside Repo Popup 3',
+            descriptions: 'Kindly Fill the Basic Information',
             text: 'Ok',
             functionCall: () {
               Navigator.pop(context);
