@@ -604,21 +604,18 @@ class TeacherProfileScreenState extends State<TeacherProfileScreen>
   }
 
   Future<bool> requestPermission(ImageSource source) async {
-    PermissionStatus status;
-
     if (source == ImageSource.camera) {
-      status = await Permission.camera.request();
+      PermissionStatus status = await Permission.camera.request();
+      return status.isGranted;
     } else {
-      status = await Permission.photos
-          .request(); // Android 13+ requires READ_MEDIA_IMAGES
+      if (Platform.isAndroid) {
+        // The Android system photo picker handles permissions internally.
+        return true;
+      } else {
+        PermissionStatus status = await Permission.photos.request();
+        return status.isGranted || status.isLimited;
+      }
     }
-
-    if (status.isGranted) {
-      return true;
-    } else if (status.isPermanentlyDenied) {
-      return false;
-    }
-    return false;
   }
 }
 
