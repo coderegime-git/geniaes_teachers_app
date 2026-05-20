@@ -27,14 +27,30 @@ class LiveChatController extends GetxController {
   List<dynamic> serviceMessageList = [];
   updateMessageList(newValue) {
     if (newValue != null) {
-      messageList.add(newValue);
-      update();
+      bool exists = false;
+      if (newValue is Map && newValue['id'] != null) {
+        exists =
+            messageList.any((msg) => msg is Map && msg['id'] == newValue['id']);
+      }
+      if (!exists) {
+        messageList.add(newValue);
+        update();
+      }
     }
   }
 
   updateServiceMessageList(newValue) {
-    serviceMessageList.add(newValue);
-    update();
+    if (newValue != null) {
+      bool exists = false;
+      if (newValue is Map && newValue['id'] != null) {
+        exists = serviceMessageList
+            .any((msg) => msg is Map && msg['id'] == newValue['id']);
+      }
+      if (!exists) {
+        serviceMessageList.add(newValue);
+        update();
+      }
+    }
   }
 
   emptyMessageList() {

@@ -262,7 +262,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
                 // ── Input bar ──
                 bottomNavigationBar: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(5.w, 0, 5.w, 10.h),
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 10.h,
+                    left: 5.w,
+                    right: 5.w,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
