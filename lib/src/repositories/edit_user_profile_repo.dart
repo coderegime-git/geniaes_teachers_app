@@ -46,6 +46,7 @@ editUserProfileDataRepo(
         Get.find<GeneralController>().storageBox.write('userData',
             jsonEncode(Get.find<GeneralController>().currentTeacherModel));
       }
+      Get.find<GeneralController>().update();
 
       print(
           "${Get.find<GeneralController>().storageBox.read('userData')} Response Data 2");
@@ -171,6 +172,7 @@ editUserProfileImageRepo(
             true, loggedInUserRepo);
         Get.find<GeneralController>().currentTeacherModel =
             GetLoggedInTeacherDataModel.fromJson(response.data['data']);
+        Get.find<GeneralController>().update();
         // Get.find<GeneralController>().storageBox.write('userData',
         //     jsonEncode(Get.find<GeneralController>().currentTeacherModel));
         log("${response.data['data']}Image Repo Response 3");
@@ -269,6 +271,7 @@ editUserProfileEducationDataRepo(
         Get.find<GeneralController>().storageBox.write('userData',
             jsonEncode(Get.find<GeneralController>().currentTeacherModel));
       }
+      Get.find<GeneralController>().update();
 
       print(
           "${Get.find<GeneralController>().storageBox.read('userData')} Response Data 2");

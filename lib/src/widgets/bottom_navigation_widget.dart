@@ -182,53 +182,55 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
                             bottom: Divider.createBorderSide(context,
                                 color: AppColors.white, width: 0.0),
                           )),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // FIXED: use _buildProfileImage() to safely handle null loginInfo
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: _buildProfileImage(),
-                          ),
-                          Flexible(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Get.find<GeneralController>()
-                                    .storageBox
-                                    .read('authToken') !=
-                                    null
-                                    ? Text(
-                                  "${Get.find<GeneralController>().currentTeacherModel?.name ?? ''} ",
-                                  style: AppTextStyles.bodyTextStyle5,
-                                )
-                                    : GestureDetector(
-                                  onTap: () {
-                                    Get.toNamed(PageRoutes.signinScreen);
-                                  },
-                                  child: Text(
-                                    LanguageConstant.signIn.tr,
-                                    style: AppTextStyles.bodyTextStyle5,
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 2.h,
-                                ),
-                                Text(
-                                  Get.find<GeneralController>()
+                      child: GetBuilder<GeneralController>(builder: (generalController) {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // FIXED: use _buildProfileImage() to safely handle null loginInfo
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _buildProfileImage(),
+                            ),
+                            Flexible(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  generalController
                                       .storageBox
                                       .read('authToken') !=
                                       null
-                                      ? "${Get.find<GeneralController>().currentTeacherModel?.email ?? ''} "
-                                      : "",
-                                  style: AppTextStyles.subHeadingTextStyle3,
-                                ),
-                              ],
+                                      ? Text(
+                                    "${generalController.currentTeacherModel?.name ?? ''} ",
+                                    style: AppTextStyles.bodyTextStyle5,
+                                  )
+                                      : GestureDetector(
+                                    onTap: () {
+                                      Get.toNamed(PageRoutes.signinScreen);
+                                    },
+                                    child: Text(
+                                      LanguageConstant.signIn.tr,
+                                      style: AppTextStyles.bodyTextStyle5,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 2.h,
+                                  ),
+                                  Text(
+                                    generalController
+                                        .storageBox
+                                        .read('authToken') !=
+                                        null
+                                        ? "${generalController.currentTeacherModel?.email ?? ''} "
+                                        : "",
+                                    style: AppTextStyles.subHeadingTextStyle3,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        );
+                      }),
                     ),
                     Container(
                       decoration: const BoxDecoration(
