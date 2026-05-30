@@ -31,6 +31,8 @@ signInWithEmailRepo(
       log("${Get.find<GeneralController>().storageBox.read('authToken')} Logged IN User Token");
       Get.find<GeneralController>().storageBox.write('userID',
           Get.find<SigninController>().signInUserModel.data!.user!.id);
+      Get.find<GeneralController>().storageBox.write('pusherID',
+          Get.find<SigninController>().signInUserModel.data!.user!.loginInfo!.id);
 
       Get.find<GeneralController>().storageBox.write('login_as', "teacher");
       Get.find<GeneralController>().storageBox.write('userData',
@@ -100,6 +102,8 @@ socialSignInWithEmailRepo(
       log("${Get.find<GeneralController>().storageBox.read('authToken')} Logged IN User Token");
       Get.find<GeneralController>().storageBox.write('userID',
           Get.find<SigninController>().signInUserModel.data!.user!.id);
+      Get.find<GeneralController>().storageBox.write('pusherID',
+          Get.find<SigninController>().signInUserModel.data!.user!.loginInfo!.id);
 
       Get.find<GeneralController>().storageBox.write('login_as', "teacher");
       Get.find<GeneralController>().storageBox.write('userData',

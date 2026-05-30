@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:resize/resize.dart';
@@ -6,6 +7,11 @@ import '../models/get_live_chat_messages_model.dart';
 import '../models/get_live_service_chat_messages_model.dart';
 
 class LiveChatController extends GetxController {
+  File? selectedFile;
+  updateSelectedFile(File? file) {
+    selectedFile = file;
+    update();
+  }
   final TextEditingController messageController = TextEditingController();
   final TextEditingController serviceMessageController =
       TextEditingController();

@@ -326,7 +326,8 @@ class PusherBeams extends PusherBeamsPlatform with CallbackHandlerApi {
   /// **You're not supposed to use this**
   @override
   void handleCallback(String callbackId, String callbackName, List args) {
-    final callback = _callbacks[callbackId]!;
+    final callback = _callbacks[callbackId];
+    if (callback == null) return;
 
     switch (callbackName) {
       case "onInterestChanges":

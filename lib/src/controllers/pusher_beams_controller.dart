@@ -29,7 +29,7 @@ class PusherBeamsController extends GetxController {
     if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
     try {
       final userId =
-      Get.find<GeneralController>().storageBox.read('userID').toString();
+      Get.find<GeneralController>().storageBox.read('pusherID').toString();
       print("PUSHER USER ID: $userId");
       log("PUSHER USER ID: $userId");
       log("PUSHER AUTH URL: ${apiBaseUrl}pusher/beams-auth");
@@ -39,26 +39,23 @@ class PusherBeamsController extends GetxController {
         ..headers = {'Content-Type': 'application/json'}
         ..queryParams = {
           'user_id':
-              Get.find<GeneralController>().storageBox.read('userID').toString()
+              Get.find<GeneralController>().storageBox.read('pusherID').toString()
         }
         ..credentials = 'omit';
       await PusherBeams.instance.setDeviceInterests([
-        Get.find<GeneralController>().storageBox.read('userID').toString(),
+        userId,
+        "App.Models.Teacher.$userId",
+        "App.Models.User.$userId",
       ]);
       await PusherBeams.instance.setUserId(
-        Get.find<GeneralController>().storageBox.read('userID').toString(),
+        Get.find<GeneralController>().storageBox.read('pusherID').toString(),
         provider,
-        (error) => {
-          if (error != null)
-            {
-              print("$error ERROR PUSHER"),
-            }
-          else
-            {
-              print("$error PUSHER2"),
-            }
-
-          // Success! Do something...
+        (error) {
+          if (error != null) {
+              print("$error ERROR PUSHER");
+          } else {
+              print("$error PUSHER2");
+          }
         },
       );
     } catch (e) {
@@ -69,12 +66,15 @@ class PusherBeamsController extends GetxController {
   initPusherBeams() async {
     if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
     log("INITIALIZE PUSHER");
-    log("${Get.find<GeneralController>().storageBox.hasData('userID')} USERIDTRUE");
-    log("${Get.find<GeneralController>().storageBox.read('userID')} USERIDREAD");
+    log("${Get.find<GeneralController>().storageBox.hasData('pusherID')} USERIDTRUE");
+    log("${Get.find<GeneralController>().storageBox.read('pusherID')} USERIDREAD");
     
     try {
       await PusherBeams.instance.start('9466bd1b-2413-4135-badc-36ae30931bac');
-      await PusherBeams.instance.addDeviceInterest("hello");
+      String userId = Get.find<GeneralController>().storageBox.read('pusherID').toString();
+      await PusherBeams.instance.addDeviceInterest(userId);
+      await PusherBeams.instance.addDeviceInterest("App.Models.Teacher.$userId");
+      await PusherBeams.instance.addDeviceInterest("App.Models.User.$userId");
     } catch (e) {
       log("PusherBeams start error: $e");
     }
@@ -86,7 +86,7 @@ class PusherBeamsController extends GetxController {
       log(await "${PusherBeams.instance.getDeviceInterests()} DEVICEINTEREST");
 
       await PusherBeams.instance
-          .onInterestChanges((interests) => {print('Interests: $interests')});
+          .onInterestChanges((interests) { print('Interests: $interests'); });
 
       await PusherBeams.instance
           .onMessageReceivedInTheForeground(_onMessageReceivedInTheForeground);
@@ -113,22 +113,35 @@ class PusherBeamsController extends GetxController {
   }
 
   void _onMessageReceivedInTheForeground(Map<Object?, Object?> data) {
-    dynamic allData = data["data"];
-    Map<String, dynamic> payload = jsonDecode(allData["payload"]);
-    dynamic appointmentData = payload["appointment"];
+    try {
+      if (data["data"] == null) return;
+      dynamic allData = data["data"];
+      
+      if (allData is! Map || allData["payload"] == null) {
+        log("Payload missing in notification data: $data");
+        return;
+      }
+      
+      Map<String, dynamic> payload = jsonDecode(allData["payload"]);
+      dynamic appointmentData = payload["appointment"];
 
-    log("${jsonDecode(allData["payload"])} PAYLOAD");
-    log("${appointmentData} APPOINTMENT");
+      log("$payload PAYLOAD");
+      log("$appointmentData APPOINTMENT");
 
-    // Get.find<GeneralController>().channelForCall =
-    //     payload["channel_name"].toString();
-    // Get.find<GeneralController>().tokenForCall = payload["token"].toString();
-    Get.find<GeneralController>().updateChannelForCall(payload["channel_name"]);
-    Get.find<GeneralController>().updateTokenForCall(payload["token"]);
-    // Get.find<GeneralController>()
-    //     .updateCallerType(appointmentData["appointment_type_id"]);
-    log("${appointmentData["teacher_name"]} TEACHERNAME");
-    log("${payload["channel_name"]} CHANNELNAME");
+      if (payload["channel_name"] != null) {
+        Get.find<GeneralController>().updateChannelForCall(payload["channel_name"]);
+      }
+      if (payload["token"] != null) {
+        Get.find<GeneralController>().updateTokenForCall(payload["token"]);
+      }
+      
+      if (appointmentData != null) {
+        log("${appointmentData["teacher_name"]} TEACHERNAME");
+      }
+      log("${payload["channel_name"]} CHANNELNAME");
+    } catch (e) {
+      log("Error parsing foreground notification: $e");
+    }
 
     if (Get.find<GeneralController>().storageBox.hasData('userData') &&
         Get.find<GeneralController>().storageBox.hasData('authToken')) {

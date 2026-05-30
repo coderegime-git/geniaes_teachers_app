@@ -11,41 +11,22 @@ import '../widgets/custom_dialog.dart';
 
 signOutUserRepo(
     BuildContext context, bool responseCheck, Map<String, dynamic> response) {
-  if (responseCheck) {
-    // Get.find<LoggedInUserController>().loggedInUserModel =
-    //     GetLoggedInUserModel.fromJson(response);
-    Get.find<GeneralController>().storageBox.erase();
+  
+  Get.find<GeneralController>().storageBox.erase();
 
-    Get.find<GeneralController>().storageBox.remove('userData');
-    Get.find<GeneralController>().storageBox.remove('seen');
-    Get.find<GeneralController>().storageBox.remove('userID');
-    if (Get.find<TeacherAppointmentHistoryController>()
-        .teacherAllAppointmentHistoryListForPagination
-        .isNotEmpty) {
-      Get.find<TeacherAppointmentHistoryController>()
-          .teacherAllAppointmentHistoryListForPagination = [];
-    }
-    // Get.find<GeneralController>().box.remove('localToken');
-    Get.find<GeneralController>().currentTeacherModel = null;
-    Get.offAndToNamed(PageRoutes.signinScreen);
-    Get.find<SignOutUserController>().updateSignOutLoaderController(false);
-    Get.find<PusherBeamsController>().clearAllStatePusherBeams();
-    if (Get.find<SignOutUserController>().signOutModel.success == true) {}
-  } else {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return CustomDialogBox(
-            title: "Please Try Again",
-            titleColor: AppColors.customDialogErrorColor,
-            descriptions:
-                '${Get.find<SignOutUserController>().signOutModel.message}',
-            text: "Ok",
-            functionCall: () {
-              Navigator.pop(context);
-            },
-            img: 'assets/icons/dialog_error.png',
-          );
-        });
+  Get.find<GeneralController>().storageBox.remove('userData');
+  Get.find<GeneralController>().storageBox.remove('seen');
+  Get.find<GeneralController>().storageBox.remove('userID');
+  Get.find<GeneralController>().storageBox.remove('pusherID');
+  if (Get.find<TeacherAppointmentHistoryController>()
+      .teacherAllAppointmentHistoryListForPagination
+      .isNotEmpty) {
+    Get.find<TeacherAppointmentHistoryController>()
+        .teacherAllAppointmentHistoryListForPagination = [];
   }
+  
+  Get.find<GeneralController>().currentTeacherModel = null;
+  Get.offAndToNamed(PageRoutes.signinScreen);
+  Get.find<SignOutUserController>().updateSignOutLoaderController(false);
+  Get.find<PusherBeamsController>().clearAllStatePusherBeams();
 }

@@ -26,21 +26,60 @@ import 'src/screens/agora_call/agora_logic.dart';
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'private-make-agora-call', // id
     'High Importance Notifications', // title
-    // 'This channel is used for important notifications.', // description
     importance: Importance.high,
     playSound: true);
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
+// Must be a top-level function (not inside a class) for background messages
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print('A bg message just showed up :  ${message.messageId}');
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print('Background message received: ${message.messageId}');
+  // Show local notification for background messages
+  RemoteNotification? notification = message.notification;
+  AndroidNotification? android = message.notification?.android;
+  if (notification != null && android != null) {
+    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
+    flutterLocalNotificationsPlugin.show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'private-make-agora-call',
+          'High Importance Notifications',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+    );
+  }
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // ✅ MUST register background handler BEFORE runApp
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // ✅ Initialize local notifications plugin
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  // ✅ Create the notification channel on Android
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
 
   runApp(const MainApp());
   Get.put(GeneralController());
@@ -60,12 +99,19 @@ Future<void> main() async {
     // something went wrong while fetching the config from the url ... do something
   }
 
+  await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
     badge: true,
     sound: true,
   );
 
+  // ✅ Listen to foreground FCM messages
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
@@ -76,16 +122,20 @@ Future<void> main() async {
         notification.title,
         notification.body,
         NotificationDetails(
-          android: AndroidNotificationDetails(channel.id, channel.name,
-              importance: Importance.high,
-              priority: Priority.high,
-              playSound: true,
-              icon: '@mipmap/ic_launcher'),
+          android: AndroidNotificationDetails(
+            channel.id,
+            channel.name,
+            importance: Importance.high,
+            priority: Priority.high,
+            playSound: true,
+            icon: '@mipmap/ic_launcher',
+          ),
         ),
       );
     }
   });
 }
+
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
