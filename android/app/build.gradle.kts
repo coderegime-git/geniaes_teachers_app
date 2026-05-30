@@ -48,8 +48,8 @@ android {
     getByName("release") {
         // temporarily sign with debug keys so release builds work
         signingConfig = signingConfigs.getByName("debug")
-        isMinifyEnabled = true
-        isShrinkResources = true
+        isMinifyEnabled = false
+        isShrinkResources = false
         proguardFiles(
             getDefaultProguardFile("proguard-android-optimize.txt"),
             "proguard-rules.pro"

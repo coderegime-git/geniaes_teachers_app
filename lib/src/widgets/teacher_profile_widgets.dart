@@ -282,7 +282,7 @@ class _TeacherBasicInformationWidgetState
                                     title: LanguageConstant.sorry.tr,
                                     titleColor:
                                         AppColors.customDialogErrorColor,
-                                    descriptions: 'Inside Screen Popup',
+                                    descriptions: 'Please Fill all the fields.',
                                     text: LanguageConstant.ok.tr,
                                     functionCall: () {
                                       Navigator.pop(context);
@@ -761,7 +761,7 @@ class _TeacherEducationWidgetState extends State<TeacherEducationWidget> {
                                                   titleColor: AppColors
                                                       .customDialogErrorColor,
                                                   descriptions:
-                                                      'Inside Screen Popup',
+                                                      'Please Fill all the fields.',
                                                   text: 'Ok',
                                                   functionCall: () {
                                                     Navigator.pop(context);
@@ -1228,7 +1228,7 @@ class _TeacherCertificateWidgetState extends State<TeacherCertificateWidget> {
                                                   titleColor: AppColors
                                                       .customDialogErrorColor,
                                                   descriptions:
-                                                      'Inside Screen Popup',
+                                                      'Please Fill all the fields.',
                                                   text: LanguageConstant.ok.tr,
                                                   functionCall: () {
                                                     Navigator.pop(context);
@@ -1724,7 +1724,7 @@ class _TeacherExperienceWidgetState extends State<TeacherExperienceWidget> {
                                                   titleColor: AppColors
                                                       .customDialogErrorColor,
                                                   descriptions:
-                                                      'Inside Screen Popup',
+                                                      'Please Fill all the fields.',
                                                   text: LanguageConstant.ok.tr,
                                                   functionCall: () {
                                                     Navigator.pop(context);
@@ -2421,7 +2421,7 @@ class _TeacherPodcastsWidgetState extends State<TeacherPodcastsWidget> {
                                                   titleColor: AppColors
                                                       .customDialogErrorColor,
                                                   descriptions:
-                                                      'Inside Screen Popup',
+                                                      'Please Fill all the fields.',
                                                   text: LanguageConstant.ok.tr,
                                                   functionCall: () {
                                                     Navigator.pop(context);

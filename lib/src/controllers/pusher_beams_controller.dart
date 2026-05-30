@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:pusher_beams/pusher_beams.dart';
 
 import '../api_services/urls.dart';
+import '../config/app_configs.dart';
 
 import 'general_controller.dart';
 import 'pusher_payload_model.dart';
@@ -28,27 +29,32 @@ class PusherBeamsController extends GetxController {
   getSecure() async {
     if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
     try {
-      final userId =
-      Get.find<GeneralController>().storageBox.read('pusherID').toString();
+      var rawUserId = Get.find<GeneralController>().storageBox.read('pusherID');
+      if (rawUserId == null || rawUserId.toString().isEmpty || rawUserId.toString() == "null") {
+        log("PusherBeams getSecure aborted: pusherID is null or empty");
+        return;
+      }
+      final userId = rawUserId.toString();
       print("PUSHER USER ID: $userId");
       log("PUSHER USER ID: $userId");
       log("PUSHER AUTH URL: ${apiBaseUrl}pusher/beams-auth");
 
       final BeamsAuthProvider provider = BeamsAuthProvider()
         ..authUrl = '${apiBaseUrl}pusher/beams-auth'
-        ..headers = {'Content-Type': 'application/json'}
+        ..headers = {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}',
+          'logged-in-as': 'teacher',
+        }
         ..queryParams = {
-          'user_id':
-              Get.find<GeneralController>().storageBox.read('pusherID').toString()
+          'user_id': userId
         }
         ..credentials = 'omit';
-      await PusherBeams.instance.setDeviceInterests([
-        userId,
-        "App.Models.Teacher.$userId",
-        "App.Models.User.$userId",
-      ]);
+        
+      await PusherBeams.instance.clearDeviceInterests();
+      
       await PusherBeams.instance.setUserId(
-        Get.find<GeneralController>().storageBox.read('pusherID').toString(),
+        userId,
         provider,
         (error) {
           if (error != null) {
@@ -70,11 +76,14 @@ class PusherBeamsController extends GetxController {
     log("${Get.find<GeneralController>().storageBox.read('pusherID')} USERIDREAD");
     
     try {
-      await PusherBeams.instance.start('9466bd1b-2413-4135-badc-36ae30931bac');
-      String userId = Get.find<GeneralController>().storageBox.read('pusherID').toString();
-      await PusherBeams.instance.addDeviceInterest(userId);
-      await PusherBeams.instance.addDeviceInterest("App.Models.Teacher.$userId");
-      await PusherBeams.instance.addDeviceInterest("App.Models.User.$userId");
+      String instanceId = AppConfigs.pusherBeamsInstanceId != null && AppConfigs.pusherBeamsInstanceId.toString().isNotEmpty 
+          ? AppConfigs.pusherBeamsInstanceId.toString() 
+          : '9466bd1b-2413-4135-badc-36ae30931bac';
+      await PusherBeams.instance.start(instanceId);
+      var rawUserId = Get.find<GeneralController>().storageBox.read('pusherID');
+      if (rawUserId == null || rawUserId.toString().isEmpty || rawUserId.toString() == "null") {
+        log("PusherBeams init aborted: pusherID is null or empty");
+      }
     } catch (e) {
       log("PusherBeams start error: $e");
     }

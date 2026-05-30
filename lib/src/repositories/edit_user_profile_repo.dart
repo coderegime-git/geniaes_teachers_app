@@ -302,7 +302,7 @@ editUserProfileEducationDataRepo(
             return CustomDialogBox(
               title: "Failed",
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: 'Inside Repo 1 Popup 1',
+              descriptions: 'Please Fill the Basic Information',
               text: 'Ok',
               functionCall: () {
                 Navigator.pop(context);
@@ -320,7 +320,7 @@ editUserProfileEducationDataRepo(
           return CustomDialogBox(
             title: "Failed",
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: 'Inside Repo 1 Popup 2',
+            descriptions: 'Please Fill the Basic Information',
             text: "Ok",
             functionCall: () {
               Navigator.pop(context);
@@ -372,7 +372,7 @@ editUserProfileCertificateDataRepo(
             return CustomDialogBox(
               title: "Failed",
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: 'Inside Repo 1 Popup 1',
+              descriptions: 'Please Fill the Basic Information',
               text: 'Ok',
               functionCall: () {
                 Navigator.pop(context);
@@ -390,7 +390,7 @@ editUserProfileCertificateDataRepo(
           return CustomDialogBox(
             title: "Failed",
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: 'Inside Repo 1 Popup 2',
+            descriptions: 'Please Fill the Basic Information',
             text: "Ok",
             functionCall: () {
               Navigator.pop(context);
@@ -513,7 +513,7 @@ addUserProfileCertificateDataRepo(
               return CustomDialogBox(
                 title: 'Failed',
                 titleColor: AppColors.customDialogErrorColor,
-                descriptions: 'Inside Repo Popup 1',
+                descriptions: 'Please Fill the Basic Information',
                 text: 'Ok',
                 functionCall: () {
                   Navigator.pop(context);
@@ -532,7 +532,7 @@ addUserProfileCertificateDataRepo(
             return CustomDialogBox(
               title: 'Failed',
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: 'Inside Repo Popup 2',
+              descriptions: 'Please Fill the Basic Information',
               text: 'Ok',
               functionCall: () {
                 Navigator.pop(context);
@@ -551,7 +551,7 @@ addUserProfileCertificateDataRepo(
           return CustomDialogBox(
             title: 'Failed',
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: 'Inside Repo Popup 3',
+            descriptions: 'Please Fill the Basic Information',
             text: 'Ok',
             functionCall: () {
               Navigator.pop(context);
@@ -678,7 +678,7 @@ addUserProfileExperienceDataRepo(
               return CustomDialogBox(
                 title: 'Failed',
                 titleColor: AppColors.customDialogErrorColor,
-                descriptions: 'Inside Repo Popup 1',
+                descriptions: 'Please Fill the Basic Information',
                 text: 'Ok',
                 functionCall: () {
                   Navigator.pop(context);
@@ -698,7 +698,7 @@ addUserProfileExperienceDataRepo(
             return CustomDialogBox(
               title: 'Failed',
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: 'Inside Repo Popup 2',
+              descriptions: 'Please Fill the Basic Information',
               text: 'Ok',
               functionCall: () {
                 Navigator.pop(context);
@@ -856,7 +856,7 @@ addUserProfileEducationDataRepo(
               return CustomDialogBox(
                 title: 'Failed',
                 titleColor: AppColors.customDialogErrorColor,
-                descriptions: 'Inside Repo Popup 1',
+                descriptions: 'Please Fill the Basic Information',
                 text: 'Ok',
                 functionCall: () {
                   Navigator.pop(context);
@@ -875,7 +875,7 @@ addUserProfileEducationDataRepo(
             return CustomDialogBox(
               title: 'Failed',
               titleColor: AppColors.customDialogErrorColor,
-              descriptions: 'Inside Repo Popup 2',
+              descriptions: 'Please Fill the Basic Information',
               text: 'Ok',
               functionCall: () {
                 Navigator.pop(context);
@@ -894,7 +894,7 @@ addUserProfileEducationDataRepo(
           return CustomDialogBox(
             title: 'Failed',
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: 'Inside Repo Popup 3',
+            descriptions: 'Please Fill the Basic Information',
             text: 'Ok',
             functionCall: () {
               Navigator.pop(context);
