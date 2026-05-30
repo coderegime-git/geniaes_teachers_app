@@ -108,21 +108,21 @@ editUserProfileDataRepo(
 }
 
 editUserProfileImageRepo(
-  String? firstName,
-  String? lastName,
-  String? userName,
-  String? description,
-  String? addressLine1,
-  String? addressLine2,
-  String? zipCode,
-  dynamic teacherCategories,
-  dynamic languages,
-  dynamic tags,
-  File? file1,
-  File? file2,
-) async {
+    String? firstName,
+    String? lastName,
+    String? userName,
+    String? description,
+    String? addressLine1,
+    String? addressLine2,
+    String? zipCode,
+    dynamic teacherCategories,
+    dynamic languages,
+    dynamic tags,
+    File? file1,
+    File? file2,
+    ) async {
   dio_instance.FormData formData =
-      dio_instance.FormData.fromMap(<String, dynamic>{
+  dio_instance.FormData.fromMap(<String, dynamic>{
     "logged-in-as": "teacher",
     'first_name': firstName,
     'last_name': lastName,
@@ -160,7 +160,7 @@ editUserProfileImageRepo(
         followRedirects: false, // default is true, change to false
         maxRedirects: 0, // set to 0
         contentType:
-            "${ContentType.parse("application/x-www-form-urlencoded")}",
+        "${ContentType.parse("application/x-www-form-urlencoded")}",
       ),
     );
     log("${response} Image Repo Response");
@@ -449,13 +449,13 @@ deleteUserProfileCertificateDataRepo(
 }
 
 addUserProfileCertificateDataRepo(
-  String? name,
-  description,
-  File? file1,
-  int? isActive,
-) async {
+    String? name,
+    description,
+    File? file1,
+    int? isActive,
+    ) async {
   dio_instance.FormData formData =
-      dio_instance.FormData.fromMap(<String, dynamic>{
+  dio_instance.FormData.fromMap(<String, dynamic>{
     'name': name,
     'description': description,
     'image': await dio_instance.MultipartFile.fromFile(file1!.path),
@@ -610,20 +610,20 @@ deleteUserProfileExperienceDataRepo(
 }
 
 addUserProfileExperienceDataRepo(
-  String? companyName,
-  String? description,
-  dynamic from,
-  dynamic to,
-  File? file1,
-  int? isActive,
-) async {
+    String? companyName,
+    String? description,
+    dynamic from,
+    dynamic to,
+    File? file1,
+    int? isActive,
+    ) async {
   dio_instance.FormData formData =
-      dio_instance.FormData.fromMap(<String, dynamic>{
+  dio_instance.FormData.fromMap(<String, dynamic>{
     'company': companyName,
     'description': description,
     'from': from,
     'to': to,
-    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'file': await dio_instance.MultipartFile.fromFile(file1!.path),
     'is_active': 1,
   });
   dio_instance.Dio dio = dio_instance.Dio();
@@ -690,6 +690,7 @@ addUserProfileExperienceDataRepo(
       }
     } else {
       Get.find<GeneralController>().updateFormLoaderController(false);
+
       showDialog(
           context: Get.context!,
           barrierDismissible: false,
@@ -709,6 +710,15 @@ addUserProfileExperienceDataRepo(
   } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
     Get.find<GeneralController>().updateFormLoaderController(false);
+    String errorMessage = 'Something went wrong. Please try again.';
+    try {
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map) {
+          errorMessage = data['message']?.toString() ?? errorMessage;
+        }
+      }
+    } catch (_) {}
     showDialog(
         context: Get.context!,
         barrierDismissible: false,
@@ -716,7 +726,7 @@ addUserProfileExperienceDataRepo(
           return CustomDialogBox(
             title: 'Failed',
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: 'Inside Repo Popup 3',
+            descriptions: errorMessage,
             text: 'Ok',
             functionCall: () {
               Navigator.pop(context);
@@ -775,24 +785,24 @@ deleteUserProfileEducationDataRepo(
 }
 
 addUserProfileEducationDataRepo(
-  String? instituteName,
-  String? description,
-  String? from,
-  String? to,
-  String? degree,
-  String? subject,
-  File? file1,
-  int? isActive,
-) async {
+    String? instituteName,
+    String? description,
+    String? from,
+    String? to,
+    String? degree,
+    String? subject,
+    File? file1,
+    int? isActive,
+    ) async {
   dio_instance.FormData formData =
-      dio_instance.FormData.fromMap(<String, dynamic>{
+  dio_instance.FormData.fromMap(<String, dynamic>{
     'institute': instituteName,
     'description': description,
     'from': from,
     'to': to,
     'degree': degree,
     'subject': subject,
-    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
+    'file': await dio_instance.MultipartFile.fromFile(file1!.path),
     'is_active': 1,
   });
   dio_instance.Dio dio = dio_instance.Dio();
@@ -943,20 +953,19 @@ deleteUserProfilePodcastDataRepo(
 }
 
 addUserProfilePodcastDataRepo(
-  String? name,
-  String? description,
-  String? fileType,
-  String? linkType,
-  String? categoryId,
-  dynamic tagIds,
-  String? fileURL,
-  File? file1,
-  File? audioFile,
-  File? videoFile,
-  int? isActive,
-) async {
-  dio_instance.FormData formData =
-      dio_instance.FormData.fromMap(<String, dynamic>{
+    String? name,
+    String? description,
+    String? fileType,
+    String? linkType,
+    String? categoryId,
+    dynamic tagIds,
+    String? fileURL,
+    File? file1,
+    File? audioFile,
+    File? videoFile,
+    int? isActive,
+    ) async {
+  final Map<String, dynamic> formFields = {
     'name': name,
     'description': description,
     'file_type': fileType,
@@ -964,11 +973,18 @@ addUserProfilePodcastDataRepo(
     'podcast_category_id': categoryId,
     'tag_ids[]': tagIds,
     'file_url': fileURL,
-    'image': await dio_instance.MultipartFile.fromFile(file1!.path),
-    'audio': await dio_instance.MultipartFile.fromFile(audioFile!.path),
-    'video': await dio_instance.MultipartFile.fromFile(videoFile!.path),
     'is_active': 1,
-  });
+  };
+  if (file1 != null) {
+    formFields['image'] = await dio_instance.MultipartFile.fromFile(file1.path);
+  }
+  if (audioFile != null) {
+    formFields['audio'] = await dio_instance.MultipartFile.fromFile(audioFile.path);
+  }
+  if (videoFile != null) {
+    formFields['video'] = await dio_instance.MultipartFile.fromFile(videoFile.path);
+  }
+  dio_instance.FormData formData = dio_instance.FormData.fromMap(formFields);
   dio_instance.Dio dio = dio_instance.Dio();
   setAcceptHeader(dio);
   setContentHeader(dio);
@@ -1029,6 +1045,15 @@ addUserProfilePodcastDataRepo(
   } on dio_instance.DioException catch (e) {
     log("${e} Image Cath Response");
     Get.find<GeneralController>().updateFormLoaderController(false);
+    String errorMessage = 'Something went wrong. Please try again.';
+    try {
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map) {
+          errorMessage = data['message']?.toString() ?? errorMessage;
+        }
+      }
+    } catch (_) {}
     showDialog(
         context: Get.context!,
         barrierDismissible: false,
@@ -1036,7 +1061,7 @@ addUserProfilePodcastDataRepo(
           return CustomDialogBox(
             title: 'Failed',
             titleColor: AppColors.customDialogErrorColor,
-            descriptions: 'Inside Repo Popup 3',
+            descriptions: errorMessage,
             text: 'Ok',
             functionCall: () {
               Navigator.pop(context);
@@ -1049,16 +1074,16 @@ addUserProfilePodcastDataRepo(
 }
 
 addUserProfileEventDataRepo(
-  String? name,
-  String? description,
-  String? categoryId,
-  dynamic tagIds,
-  String? startDate,
-  String? endDate,
-  String? addressLine1,
-  String? addressLine2,
-  File? file1,
-) async {
+    String? name,
+    String? description,
+    String? categoryId,
+    dynamic tagIds,
+    String? startDate,
+    String? endDate,
+    String? addressLine1,
+    String? addressLine2,
+    File? file1,
+    ) async {
   dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
     'name': name,
     'description': description,
@@ -1076,7 +1101,7 @@ addUserProfileEventDataRepo(
   setContentHeader(dio);
   setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
   setCustomHeader(dio, 'logged-in-as', 'teacher');
-  
+
   try {
     final response = await dio.post(addEditUserProfileEventURL, data: formData);
     Get.find<GeneralController>().updateFormLoaderController(false);
@@ -1121,12 +1146,12 @@ addUserProfileEventDataRepo(
 }
 
 addUserProfileBlogDataRepo(
-  String? name,
-  String? description,
-  String? categoryId,
-  dynamic tagIds,
-  File? file1,
-) async {
+    String? name,
+    String? description,
+    String? categoryId,
+    dynamic tagIds,
+    File? file1,
+    ) async {
   dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
     'name': name,
     'description': description,
@@ -1138,7 +1163,7 @@ addUserProfileBlogDataRepo(
   dio_instance.Dio dio = dio_instance.Dio();
   setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
   setCustomHeader(dio, 'logged-in-as', 'teacher');
-  
+
   try {
     final response = await dio.post(addEditUserProfileBlogURL, data: formData);
     Get.find<GeneralController>().updateFormLoaderController(false);
@@ -1199,13 +1224,13 @@ addUserProfileBlogDataRepo(
 }
 
 addUserProfileServiceDataRepo(
-  String? name,
-  String? description,
-  String? categoryId,
-  dynamic tagIds,
-  String? price,
-  File? file1,
-) async {
+    String? name,
+    String? description,
+    String? categoryId,
+    dynamic tagIds,
+    String? price,
+    File? file1,
+    ) async {
   dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
     'name': name,
     'description': description,
@@ -1218,7 +1243,7 @@ addUserProfileServiceDataRepo(
   dio_instance.Dio dio = dio_instance.Dio();
   setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
   setCustomHeader(dio, 'logged-in-as', 'teacher');
-  
+
   try {
     dio_instance.Response response = await dio.post(addEditUserProfileServiceURL, data: formData);
     Get.find<GeneralController>().updateFormLoaderController(false);
@@ -1248,14 +1273,14 @@ addUserProfileServiceDataRepo(
 }
 
 addUserProfileBroadcastDataRepo(
-  String? name,
-  String? description,
-  String? categoryId,
-  dynamic tagIds,
-  String? fileType,
-  String? fileURL,
-  File? file1,
-) async {
+    String? name,
+    String? description,
+    String? categoryId,
+    dynamic tagIds,
+    String? fileType,
+    String? fileURL,
+    File? file1,
+    ) async {
   dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
     'name': name,
     'description': description,
@@ -1269,7 +1294,7 @@ addUserProfileBroadcastDataRepo(
   dio_instance.Dio dio = dio_instance.Dio();
   setCustomHeader(dio, 'Authorization', 'Bearer ${Get.find<GeneralController>().storageBox.read('authToken')}');
   setCustomHeader(dio, 'logged-in-as', 'teacher');
-  
+
   try {
     final response = await dio.post(addEditUserProfileBroadcastURL, data: formData);
     Get.find<GeneralController>().updateFormLoaderController(false);
@@ -1314,14 +1339,14 @@ addUserProfileBroadcastDataRepo(
 }
 
 addUserProfileArchiveDataRepo(
-  String? name,
-  String? description,
-  String? categoryId,
-  dynamic tagIds,
-  String? fileType,
-  String? fileURL,
-  File? file1,
-) async {
+    String? name,
+    String? description,
+    String? categoryId,
+    dynamic tagIds,
+    String? fileType,
+    String? fileURL,
+    File? file1,
+    ) async {
   dio_instance.FormData formData = dio_instance.FormData.fromMap(<String, dynamic>{
     'name': name,
     'description': description,
@@ -1380,10 +1405,10 @@ addUserProfileArchiveDataRepo(
 }
 
 deleteTeacherArchiveRepo(
-  BuildContext context,
-  String? url,
-  dynamic payload,
-) async {
+    BuildContext context,
+    String? url,
+    dynamic payload,
+    ) async {
   log("Deleting archive from $url");
   Get.find<GeneralController>().updateFormLoaderController(true);
 

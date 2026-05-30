@@ -706,6 +706,29 @@ class _TeacherEducationWidgetState extends State<TeacherEducationWidget> {
                                         if (_userProfileUpdateFormKey
                                             .currentState!
                                             .validate()) {
+                                          if (file == null) {
+                                            showDialog(
+                                                context: context,
+                                                barrierDismissible: false,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return CustomDialogBox(
+                                                    title: LanguageConstant
+                                                        .sorry.tr,
+                                                    titleColor: AppColors
+                                                        .customDialogErrorColor,
+                                                    descriptions:
+                                                        'Please upload a document before submitting.',
+                                                    text: 'Ok',
+                                                    functionCall: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    img:
+                                                        'assets/icons/dialog_error.png',
+                                                  );
+                                                });
+                                            return;
+                                          }
                                           addUserProfileEducationDataRepo(
                                               editProfileController
                                                   .educationInstituteNameController
